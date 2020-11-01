@@ -1,0 +1,9 @@
+{
+  "id": "obsidian-vimrc-support",
+  "name": "Obsidian Vimrc Support",
+  "version": "0.1.0",
+  "description": "Auto-load a startup file with Obsidian Vim commands.",
+  "author": "esm",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}

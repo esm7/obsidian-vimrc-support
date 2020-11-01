@@ -1,0 +1,23 @@
+{
+  "name": "obsidian-vimrc-support",
+  "version": "0.1.0",
+  "description": "Auto-load a startup file with Obsidian Vim commands.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "rollup --config rollup.config.js -w",
+    "build": "rollup --config rollup.config.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^15.1.0",
+    "@rollup/plugin-node-resolve": "^9.0.0",
+    "@rollup/plugin-typescript": "^6.1.0",
+    "@types/node": "^14.14.6",
+    "obsidian": "https://github.com/obsidianmd/obsidian-api/tarball/master",
+    "rollup": "^2.33.0",
+    "tslib": "^2.0.3",
+    "typescript": "^4.0.5"
+  }
+}

@@ -29,10 +29,9 @@ Also, commands that fail don't generate any visible error for now.
 
 ## Installation
 
-A PR is pending for this to be listed under the Obsidian community plugins.
-When approved, in Obsidian.md turn off Safe mode, then browse to this plugin.
+In the Obsidian.md settings under "Third-party plugin", turn off Safe mode, then browse to this plugin.
 
-Until then, and also later if preferred for some reason, you can install it manually: just copy `main.js` and `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-vimrc-support/`.
+Alternatively (and less recommended), you can install it manually: just copy `main.js` and `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-vimrc-support/`.
 
 ## Wishlist
 

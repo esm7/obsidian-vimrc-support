@@ -5,7 +5,9 @@ For users of the Obsidian.md Vim mode, this is very useful for making various se
 
 ## Usage
 
-Just put a file named `.obsidian.vimrc` in your vault root.
+First and foremost, make sure you have the Obsidian Vim key bindings turned on -- see Editor -> Vim key bindings.
+
+Now to keep some of your Vim settings permanent, install this plugin and put a file named `.obsidian.vimrc` in your vault root.
 If you're using multiple vaults, you'll need this file on each one.
 
 Here's a simple & useful `.obsidian.vimrc` that I'm using:

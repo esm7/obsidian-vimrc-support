@@ -21,14 +21,18 @@ export default class MyPlugin extends Plugin {
 		if (view.getViewType() == 'markdown') {
 			var markdownView = view as MarkdownView;
 			var cmEditor = markdownView.sourceMode.cmEditor;
-			if (cmEditor) {
+			if (cmEditor && !CodeMirror.Vim.loadedVimrc) {
 				vimCommands.split("\n").forEach(
 					function(line, index, arr) {
 						if (line.length > 0) {
-							CodeMirror.Vim.handleEx(cmEditor, line)
+							CodeMirror.Vim.handleEx(cmEditor, line);
 						}
 					}
 				)
+				// Make sure that we load it just once per CodeMirror instance.
+				// This is supposed to work because the Vim state is kept at the keymap level, hopefully
+				// there will not be bugs caused by operations that are kept at the object level instead
+				CodeMirror.Vim.loadedVimrc = true;
 			}
 		}
 	}

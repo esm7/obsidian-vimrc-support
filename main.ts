@@ -1,6 +1,9 @@
 import { App, Plugin, TFile, MarkdownView } from 'obsidian';
 
-export default class MyPlugin extends Plugin {
+export default class VimrcPlugin extends Plugin {
+	private lastYankBuffer = new Array<string>(0);
+	private yankToSystemClipboard: boolean = false;
+
 	onload() {
 		console.log('loading Vimrc plugin');
 
@@ -10,6 +13,14 @@ export default class MyPlugin extends Plugin {
 				then((lines) => this.readVimInit(lines)).
 				catch(error => { console.log('Error loading vimrc file', VIMRC_FILE_NAME, 'from the vault root') });
 		}));
+
+		this.registerDomEvent(document, 'click', () => {
+			this.captureYankBuffer();
+		});
+
+		this.registerDomEvent(document, 'keyup', () => {
+			this.captureYankBuffer();
+		});
 	}
 
 	onunload() {
@@ -22,9 +33,22 @@ export default class MyPlugin extends Plugin {
 			var markdownView = view as MarkdownView;
 			var cmEditor = markdownView.sourceMode.cmEditor;
 			if (cmEditor && !CodeMirror.Vim.loadedVimrc) {
+				CodeMirror.Vim.defineOption('clipboard', '', 'string', ['clip'], (value, cm) => {
+					if (value) {
+						if (value.trim() == 'unnamed' || value.trim() == 'unnamedplus') {
+							if (!this.yankToSystemClipboard) {
+								this.yankToSystemClipboard = true;
+								console.log("Vim is now set to yank to system clipboard.");
+							}
+						} else {
+							throw new Error("Unrecognized clipboard option, supported are 'unnamed' and 'unnamedplus' (and they do the same)")
+						}
+					}
+				});
+
 				vimCommands.split("\n").forEach(
 					function(line, index, arr) {
-						if (line.length > 0) {
+						if (line.trim().length > 0 && line.trim()[0] != '"') {
 							CodeMirror.Vim.handleEx(cmEditor, line);
 						}
 					}
@@ -33,6 +57,18 @@ export default class MyPlugin extends Plugin {
 				// This is supposed to work because the Vim state is kept at the keymap level, hopefully
 				// there will not be bugs caused by operations that are kept at the object level instead
 				CodeMirror.Vim.loadedVimrc = true;
+			}
+		}
+	}
+
+	captureYankBuffer() {
+		if (this.yankToSystemClipboard) {
+			let currentBuffer = CodeMirror.Vim.getRegisterController().getRegister('yank').keyBuffer;
+			if (currentBuffer != this.lastYankBuffer) {
+				if (this.lastYankBuffer.length > 0 && currentBuffer.length > 0 && currentBuffer[0]) {
+					navigator.clipboard.writeText(currentBuffer[0]);
+				}
+				this.lastYankBuffer = currentBuffer;
 			}
 		}
 	}

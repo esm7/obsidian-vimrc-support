@@ -13,11 +13,17 @@ If you're using multiple vaults, you'll need this file on each one.
 Here's a simple & useful `.obsidian.vimrc` that I'm using:
 
 ```
+" Have j and k navigate visual lines rather than logical ones
 nmap j gj
 nmap k gk
+" I like using H and L for beginning/end of line
 nmap H ^
 nmap L $
+" Quickly remove search highlights
 nmap <F9> :nohl
+
+" Yank to system clipboard
+set clipboard=unnamed
 ```
 
 ## Supported Commands
@@ -25,9 +31,11 @@ nmap <F9> :nohl
 The commands that can be used are whatever CodeMirror supports.
 I couldn't find a formal list anywhere but you can look for `defaultExCommandMap` in [the source code](https://github.com/codemirror/CodeMirror/blob/master/keymap/vim.js), or play around with trying commands in Obsidian's Vim mode.
 
-Note that the file parsing is as simple as it gets -- it just sends each line to the CodeMirror Ex-command parser. Therefore comments or other features you may expect don't work.
+In addition to that:
+- The plugin skips blank lines and lines starting with Vimscript comments (`" ...`).
+- Special support for yanking to system clipboard can be activated by `set clipboard=unnamed` (`unnamedplus` will do the same thing).
 
-Also, commands that fail don't generate any visible error for now.
+Commands that fail don't generate any visible error for now.
 
 ## Installation
 
@@ -45,6 +53,10 @@ Things I'd love to add:
 - Relative line numbers.
 
 ## Changelog
+
+### 0.2.0
+
+Added support for yanking to system clipboard (see above), comments and blank lines.
 
 ### 0.1.1
 

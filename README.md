@@ -37,6 +37,12 @@ In addition to that:
 
 Commands that fail don't generate any visible error for now.
 
+## Important Tip
+
+Before adding commands to your Vimrc file, you should try them in Obsidian's normal mode to make sure they work as expected.
+CodeMirror's Vim mode has some limitations and bugs and not all commands will work like you'd expect.
+In some cases you can find workarounds by experimenting, and the easiest way to do that is by trying interactively rather than via the Vimrc file.
+
 ## Installation
 
 In the Obsidian.md settings under "Third-party plugin", turn off Safe mode, then browse to this plugin.

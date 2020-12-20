@@ -34,6 +34,7 @@ I couldn't find a formal list anywhere but you can look for `defaultExCommandMap
 In addition to that:
 - The plugin skips blank lines and lines starting with Vimscript comments (`" ...`).
 - Special support for yanking to system clipboard can be activated by `set clipboard=unnamed` (`unnamedplus` will do the same thing).
+- Support for the `tabstop` Vim option (e.g. `set tabstop=4`).
 
 Commands that fail don't generate any visible error for now.
 
@@ -53,6 +54,11 @@ Things I'd love to add:
 - Relative line numbers.
 
 ## Changelog
+
+### 0.2.1
+
+- Fixed [this issue](https://github.com/esm7/obsidian-vimrc-support/issues/7): setting `clipboard=unnamed` also works for pasting now (it monitors the system clipboard and updates the yank buffer if a change is detected).
+- Support for the `tabstop` Vim option as asked [here](https://github.com/esm7/obsidian-vimrc-support/issues/3).
 
 ### 0.2.0
 

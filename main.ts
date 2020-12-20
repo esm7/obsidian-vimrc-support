@@ -2,6 +2,7 @@ import { App, Plugin, TFile, MarkdownView } from 'obsidian';
 
 export default class VimrcPlugin extends Plugin {
 	private lastYankBuffer = new Array<string>(0);
+	private lastSystemClipboard = "";
 	private yankToSystemClipboard: boolean = false;
 
 	onload() {
@@ -17,10 +18,12 @@ export default class VimrcPlugin extends Plugin {
 		this.registerDomEvent(document, 'click', () => {
 			this.captureYankBuffer();
 		});
-
 		this.registerDomEvent(document, 'keyup', () => {
 			this.captureYankBuffer();
 		});
+		this.registerDomEvent(document, 'focusin', () => {
+			this.captureYankBuffer();
+		})
 	}
 
 	onunload() {
@@ -45,6 +48,11 @@ export default class VimrcPlugin extends Plugin {
 						}
 					}
 				});
+				CodeMirror.Vim.defineOption('tabstop', 4, 'number', [], (value, cm) => {
+					if (value) {
+						cmEditor.setOption('tabSize', value);
+					}
+				});
 
 				vimCommands.split("\n").forEach(
 					function(line, index, arr) {
@@ -67,9 +75,19 @@ export default class VimrcPlugin extends Plugin {
 			if (currentBuffer != this.lastYankBuffer) {
 				if (this.lastYankBuffer.length > 0 && currentBuffer.length > 0 && currentBuffer[0]) {
 					navigator.clipboard.writeText(currentBuffer[0]);
+					this.lastSystemClipboard = currentBuffer[0];
 				}
 				this.lastYankBuffer = currentBuffer;
+				return;
 			}
+			let currentClipboard = navigator.clipboard.readText().then((value) => {
+				if (value != this.lastSystemClipboard) {
+					let yankRegister = CodeMirror.Vim.getRegisterController().getRegister('yank')
+					yankRegister.setText(value);
+					this.lastYankBuffer = yankRegister.keyBuffer;
+					this.lastSystemClipboard = value;
+				}
+			})
 		}
 	}
 }

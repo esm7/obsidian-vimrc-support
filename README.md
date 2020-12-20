@@ -3,6 +3,9 @@
 This plugin loads a file of Vim commands from `VAULT_ROOT/.obsidian.vimrc`.
 For users of the Obsidian.md Vim mode, this is very useful for making various settings (most notably keymaps) persist.
 
+Note that this plugin is **not** the Vim support of Obsidian -- that support is built-in and you can perfectly use Obsidian in Vim mode without this plugin.
+This plugin merely implements the ability to load a persistent configuration and adds a few extras.
+
 ## Usage
 
 First and foremost, make sure you have the Obsidian Vim key bindings turned on -- see Editor -> Vim key bindings.
@@ -38,16 +41,24 @@ In addition to that:
 
 Commands that fail don't generate any visible error for now.
 
+**Important tip!** Before adding commands to your Vimrc file, you should try them in Obsidian's normal mode (type '`:`' in the editor) to make sure they work as expected.
+CodeMirror's Vim mode has some limitations and bugs and not all commands will work like you'd expect.
+In some cases you can find workarounds by experimenting, and the easiest way to do that is by trying interactively rather than via the Vimrc file.
+
 ## Installation
 
 In the Obsidian.md settings under "Third-party plugin", turn off Safe mode, then browse to this plugin.
 
 Alternatively (and less recommended), you can install it manually: just copy `main.js` and `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-vimrc-support/`.
 
-## Wishlist
+## "Please implement \[some Vim feature here\]..."
 
-There are many things that I wish the CodeMirror implementation would allow.
-Many of these can be added using the CodeMirror [API for extending its Vim mode](https://codemirror.net/doc/manual.html#vimapi_extending) and maybe I'll work on these at some point.
+I'd like to emphasize again that this plugin is a tweak to Obsidian's built-in Vim mode, which is in turn mostly the [Vim mode of CodeMirror](https://codemirror.net/demo/vim.html). And while I am personally very fond of helping everybody make use of Vim modes everywhere, this plugin is often not the best place to implement some types of features.
+
+1. Vim editor features (e.g. new motions) would best be implemented in CodeMirror, so other editors using this component would enjoy them too! Please consider submitting issues or pull requests [there](https://github.com/codemirror/CodeMirror/) first.
+2. Features that are already implemented by other Obsidian plugins are best to stay in these plugins. Please consider asking these plugin authors to add Vim support for their features (using the CodeMirror API), or even better -- help them out :)
+
+Having said that, adding features here in this plugin is often very easy thanks to the CodeMirror [API for extending its Vim mode](https://codemirror.net/doc/manual.html#vimapi_extending), so as the path of least resistance I will occassionally implement some requested Vim features and be happy to accept PRs.
 
 Things I'd love to add:
 - Implement some standard `vim-markdown` motions for Obsidian, e.g. `[[`, or implement for CodeMirror the 1-2 missing Ex commands required to define these keymaps in the Vimrc.

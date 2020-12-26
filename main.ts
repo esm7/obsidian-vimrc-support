@@ -61,6 +61,16 @@ export default class VimrcPlugin extends Plugin {
 						}
 					}
 				)
+
+				vimCommands.split("\n").forEach(
+					function (line, index, arr) {
+						var words = line.split(/\s+/, 2)
+						if (line.trim().length > 0 && line.trim()[0] != '"' && words[0] == 'iunmap') {
+							CodeMirror.Vim.unmap(words[1], 'insert');
+						}
+					}
+				)
+
 				// Make sure that we load it just once per CodeMirror instance.
 				// This is supposed to work because the Vim state is kept at the keymap level, hopefully
 				// there will not be bugs caused by operations that are kept at the object level instead

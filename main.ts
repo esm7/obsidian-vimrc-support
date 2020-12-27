@@ -54,19 +54,17 @@ export default class VimrcPlugin extends Plugin {
 					}
 				});
 
+				CodeMirror.Vim.defineEx('iunmap', '', function (cm, params) => {
+                    if (params.argString.trim()) {
+                        CodeMirror.Vim.unmap(params.argString.trim(), 'insert');
+                        // console.log("ex command, iunmap executed: " + params.argString.trim());
+                    }
+                });
+
 				vimCommands.split("\n").forEach(
 					function(line, index, arr) {
 						if (line.trim().length > 0 && line.trim()[0] != '"') {
 							CodeMirror.Vim.handleEx(cmEditor, line);
-						}
-					}
-				)
-
-				vimCommands.split("\n").forEach(
-					function (line, index, arr) {
-						var words = line.split(/\s+/, 2)
-						if (line.trim().length > 0 && line.trim()[0] != '"' && words[0] == 'iunmap') {
-							CodeMirror.Vim.unmap(words[1], 'insert');
 						}
 					}
 				)

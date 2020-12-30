@@ -54,10 +54,9 @@ export default class VimrcPlugin extends Plugin {
 					}
 				});
 
-				CodeMirror.Vim.defineEx('iunmap', '', function (cm, params) => {
+				CodeMirror.Vim.defineEx('iunmap', '', (cm, params) => {
 					if (params.argString.trim()) {
 						CodeMirror.Vim.unmap(params.argString.trim(), 'insert');
-						// console.log("ex command, iunmap executed: " + params.argString.trim());
 					}
 				});
 

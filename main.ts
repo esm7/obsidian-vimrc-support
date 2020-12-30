@@ -54,6 +54,13 @@ export default class VimrcPlugin extends Plugin {
 					}
 				});
 
+				CodeMirror.Vim.defineEx('iunmap', '', function (cm, params) => {
+					if (params.argString.trim()) {
+						CodeMirror.Vim.unmap(params.argString.trim(), 'insert');
+						// console.log("ex command, iunmap executed: " + params.argString.trim());
+					}
+				});
+
 				vimCommands.split("\n").forEach(
 					function(line, index, arr) {
 						if (line.trim().length > 0 && line.trim()[0] != '"') {
@@ -61,6 +68,7 @@ export default class VimrcPlugin extends Plugin {
 						}
 					}
 				)
+
 				// Make sure that we load it just once per CodeMirror instance.
 				// This is supposed to work because the Vim state is kept at the keymap level, hopefully
 				// there will not be bugs caused by operations that are kept at the object level instead

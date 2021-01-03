@@ -1,4 +1,5 @@
 import { App, Plugin, TFile, MarkdownView } from 'obsidian';
+declare const CodeMirror: any;
 
 export default class VimrcPlugin extends Plugin {
 	private lastYankBuffer = new Array<string>(0);
@@ -57,6 +58,16 @@ export default class VimrcPlugin extends Plugin {
 				CodeMirror.Vim.defineEx('iunmap', '', (cm, params) => {
 					if (params.argString.trim()) {
 						CodeMirror.Vim.unmap(params.argString.trim(), 'insert');
+					}
+				});
+
+				CodeMirror.Vim.defineEx('noremap', '', (cm, params) => {
+					if (!params?.args?.length) {
+						throw new Error('Invalid mapping: noremap');
+					}
+				
+					if (params.argString.trim()) {
+						CodeMirror.Vim.noremap.apply(CodeMirror.Vim, params.args);
 					}
 				});
 

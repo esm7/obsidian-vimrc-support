@@ -38,7 +38,7 @@ In addition to that:
 - The plugin skips blank lines and lines starting with Vimscript comments (`" ...`).
 - Special support for yanking to system clipboard can be activated by `set clipboard=unnamed` (`unnamedplus` will do the same thing).
 - Support for the `tabstop` Vim option (e.g. `set tabstop=4`).
-- An `iunmap` command.
+- Custom mapping/unmapping commands in addition to the defaults: `noremap` and `iunmap` (PRs are welcome to implement more :) )
 
 Commands that fail don't generate any visible error for now.
 
@@ -66,6 +66,10 @@ Things I'd love to add:
 - Relative line numbers.
 
 ## Changelog
+
+### 0.2.3
+
+Added the `noremap` command, thanks @nadavspi!
 
 ### 0.2.2
 

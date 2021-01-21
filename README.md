@@ -67,6 +67,10 @@ Things I'd love to add:
 
 ## Changelog
 
+### 0.2.4
+
+Fixed a race condition with yank & paste: https://github.com/esm7/obsidian-vimrc-support/issues/11
+
 ### 0.2.3
 
 Added the `noremap` command, thanks @nadavspi!

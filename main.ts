@@ -93,7 +93,7 @@ export default class VimrcPlugin extends Plugin {
 			if (currentBuffer != this.lastYankBuffer) {
 				if (this.lastYankBuffer.length > 0 && currentBuffer.length > 0 && currentBuffer[0]) {
 					navigator.clipboard.writeText(currentBuffer[0]);
-					this.lastSystemClipboard = currentBuffer[0];
+					navigator.clipboard.readText().then((value) => { this.lastSystemClipboard = value; });
 				}
 				this.lastYankBuffer = currentBuffer;
 				return;

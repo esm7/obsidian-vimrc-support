@@ -2,9 +2,11 @@ import { App, Plugin, TFile, MarkdownView, PluginSettingTab, Setting } from 'obs
 declare const CodeMirror: any;
 
 interface Settings {
+	VIMRC_NAME: string;
 }
 
 const DEFAULT_SETTINGS: Settings = {
+	VIMRC_NAME: ".obsidian.vimrc"
 }
 
 export default class VimrcPlugin extends Plugin {
@@ -21,7 +23,7 @@ export default class VimrcPlugin extends Plugin {
 		this.addSettingTab(new SettingsTab(this.app, this))
 
 		this.registerEvent(this.app.workspace.on('file-open', (file: TFile) => {
-			const VIMRC_FILE_NAME = '.obsidian.vimrc';
+			const VIMRC_FILE_NAME = this.settings.VIMRC_NAME;
 			this.app.vault.adapter.read(VIMRC_FILE_NAME).
 				then((lines) => this.readVimInit(lines)).
 				catch(error => { console.log('Error loading vimrc file', VIMRC_FILE_NAME, 'from the vault root') });
@@ -144,5 +146,18 @@ class SettingsTab extends PluginSettingTab {
 		containerEl.empty();
 
 		containerEl.createEl('h2', {text: 'Obsidian Vimrc Support Settings'});
+
+		new Setting(containerEl)
+			.setName('Vimrc file name')
+			.setDesc('Relative to vault directory (requires restart)')
+			.addText((text) => {
+				text.setPlaceholder(DEFAULT_SETTINGS.VIMRC_NAME);
+				if(this.plugin.settings.VIMRC_NAME !== DEFAULT_SETTINGS.VIMRC_NAME)
+					text.setValue(this.plugin.settings.VIMRC_NAME)
+				text.onChange(value => {
+					this.plugin.settings.VIMRC_NAME = value || DEFAULT_SETTINGS.VIMRC_NAME;
+					this.plugin.saveSettings();
+				})
+			});
 	}
 }

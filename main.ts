@@ -1,13 +1,24 @@
-import { App, Plugin, TFile, MarkdownView } from 'obsidian';
+import { App, Plugin, TFile, MarkdownView, PluginSettingTab, Setting } from 'obsidian';
 declare const CodeMirror: any;
 
+interface Settings {
+}
+
+const DEFAULT_SETTINGS: Settings = {
+}
+
 export default class VimrcPlugin extends Plugin {
+	settings: Settings;
+
 	private lastYankBuffer = new Array<string>(0);
 	private lastSystemClipboard = "";
 	private yankToSystemClipboard: boolean = false;
 
-	onload() {
+	async onload() {
 		console.log('loading Vimrc plugin');
+
+		await this.loadSettings();
+		this.addSettingTab(new SettingsTab(this.app, this))
 
 		this.registerEvent(this.app.workspace.on('file-open', (file: TFile) => {
 			const VIMRC_FILE_NAME = '.obsidian.vimrc';
@@ -25,6 +36,15 @@ export default class VimrcPlugin extends Plugin {
 		this.registerDomEvent(document, 'focusin', () => {
 			this.captureYankBuffer();
 		})
+	}
+
+	async loadSettings(){
+		const data = await this.loadData();
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, data);
+	}
+
+	async saveSettings(){
+		await this.saveData(this.settings);
 	}
 
 	onunload() {
@@ -110,3 +130,19 @@ export default class VimrcPlugin extends Plugin {
 	}
 }
 
+class SettingsTab extends PluginSettingTab {
+	plugin: VimrcPlugin;
+
+	constructor(app: App, plugin: VimrcPlugin) {
+		super(app, plugin);
+		this.plugin = plugin;
+	}
+
+	display(): void {
+		let {containerEl} = this;
+
+		containerEl.empty();
+
+		containerEl.createEl('h2', {text: 'Obsidian Vimrc Support Settings'});
+	}
+}

@@ -27,6 +27,13 @@ nmap <F9> :nohl
 
 " Yank to system clipboard
 set clipboard=unnamed
+
+" Go back and forward with Ctrl+O and Ctrl+I
+" (make sure to remove default Obsidian shortcuts for these to work)
+exmap back obcommand app:go-back
+nmap <C-o> :back
+exmap forward obcommand app:go-forward
+nmap <C-i> :forward
 ```
 
 ## Supported Commands
@@ -84,7 +91,8 @@ Some useful examples:
 - `obcommand editor:toggle-comment`
 - `obcommand app:go-back`
 - `obcommand workspace:split-vertical`
-And countless more.
+
+And many more.
 
 **WARNING:** this is not a formal API that Obsidian provides and is done in a rather hacky manner.
 It's definitely possible that some future version of Obsidian will break this functionality.

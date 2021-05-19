@@ -39,6 +39,8 @@ In addition to that:
 - Special support for yanking to system clipboard can be activated by `set clipboard=unnamed` (`unnamedplus` will do the same thing).
 - Support for the `tabstop` Vim option (e.g. `set tabstop=4`).
 - Custom mapping/unmapping commands in addition to the defaults: `noremap` and `iunmap` (PRs are welcome to implement more :) )
+- `exmap [commandName] [command...]`: a command to map Ex commands. This should basically be supported in regular `:map`, but doesn't work with multi-argument commands due to a CodeMirror bug, so this is a workaround.
+- `obcommand` - execute Obsidian commands, see more details below.
 
 Commands that fail don't generate any visible error for now.
 
@@ -65,7 +67,53 @@ Things I'd love to add:
 - Implement some standard `vim-markdown` motions for Obsidian, e.g. `[[`, or implement for CodeMirror the 1-2 missing Ex commands required to define these keymaps in the Vimrc.
 - Relative line numbers.
 
+## Change Vimrc File Location/Name
+
+If you want the Vimrc file name or path to be different than the default, there is a plugin setting (under Settings | Plugin Options | Vimrc Support) to change that.
+
+## Executing Obsidian Commands with `obcommand`
+
+The plugin defines a custom Ex command named `obcommand` to execute various Obsidian commands as an Ex command.
+This is useful to map external functionality of Obsidian or other plugins to Vim shortcuts, but it's not as easy to use as one would hope.
+
+If you just type `:obcommand` you'll get in the Developer Console (Ctrl+Shift+I) the list of commands that are currently defined by the app.
+The simple syntax `:obcommand [commandName]` will execute the named command.
+
+Some useful examples:
+- `obcommand editor:insert-link`
+- `obcommand editor:toggle-comment`
+- `obcommand app:go-back`
+- `obcommand workspace:split-vertical`
+And countless more.
+
+**WARNING:** this is not a formal API that Obsidian provides and is done in a rather hacky manner.
+It's definitely possible that some future version of Obsidian will break this functionality.
+
+### Mapping Obsidian Commands Within Vim
+
+Next thing you probably wanna ask is "how do I map the great Obsidian commands to Vim commands?"
+
+The trivial answer should have been something along the line of `:nmap <C-o> :obcommand app:go-back`, but this **does not work** because of an annoying CodeMirror bug.
+Turns out that the various mapping commands of CodeMirror pass only the first argument, so when you execute your mapping if defined as above, `:obcommand` would execute with no arguments.
+
+Here comes a custom command to the rescue, `exmap`, which you can use to "alias" Ex commands for longer Ex commands: `:exmap back obcommand app:go-back`.
+You now have a simple (0 argument) Ex command named `back` that goes back in Obsidian, and *that* is something you can map.
+
+To summarize, here's how you map `C-o` to Back:
+```
+exmap back obcommand app:go-back
+nmap <C-o> :back
+```
+
+Note how `exmap` lists command names without colons and in `nmap` the colon is required.
+
 ## Changelog
+
+### 0.3.0
+
+- Added a settings file for the Vimrc file name (thank you @SalmanAlSaigal!)
+- Added the `exmap` Ex command.
+- Added the `obcommand` Ex command.
 
 ### 0.2.4
 

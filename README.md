@@ -117,6 +117,10 @@ Note how `exmap` lists command names without colons and in `nmap` the colon is r
 
 ## Changelog
 
+### 0.3.1
+
+- Fixed some commands not working via `obcommand` (https://github.com/esm7/obsidian-vimrc-support/issues/32)
+
 ### 0.3.0
 
 - Added a settings file for the Vimrc file name (thank you @SalmanAlSaigal!)

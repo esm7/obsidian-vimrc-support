@@ -158,9 +158,9 @@ export default class VimrcPlugin extends Plugin {
 						let editorCallback = availableCommands[command].editorCallback;
 						let editorCheckCallback = availableCommands[command].editorCheckCallback;
 						if (editorCheckCallback)
-							editorCheckCallback(markdownView.editor, false);
+							editorCheckCallback(false, markdownView.editor, markdownView);
 						else if (editorCallback)
-							editorCallback(markdownView.editor);
+							editorCallback(markdownView.editor, markdownView);
 						else if (checkCallback)
 							checkCallback(false);
 						else if (callback)

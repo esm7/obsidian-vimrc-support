@@ -11,6 +11,13 @@ const DEFAULT_SETTINGS: Settings = {
 	vimrcFileName: ".obsidian.vimrc"
 }
 
+const enum vimStatus {
+	normal = "🟢",
+	insert = "🟠",
+	replace = "🔴",
+	visual = "🟡"
+}
+
 function sleep(ms: number) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -21,6 +28,10 @@ export default class VimrcPlugin extends Plugin {
 	private lastYankBuffer = new Array<string>(0);
 	private lastSystemClipboard = "";
 	private yankToSystemClipboard: boolean = false;
+	private currentKeyChord: string[] = [];
+	private vimChordStatusBar: HTMLElement = null;
+	private vimStatusBar: HTMLElement = null;
+	private currentVimStatus: vimStatus = vimStatus.normal;
 
 	async onload() {
 		console.log('loading Vimrc plugin');
@@ -178,6 +189,56 @@ export default class VimrcPlugin extends Plugin {
 						}
 					}
 				)
+
+				this.vimStatusBar = this.addStatusBarItem()
+				this.vimChordStatusBar = this.addStatusBarItem()
+				var parent = this.vimChordStatusBar.parentElement
+				this.vimChordStatusBar.parentElement.insertBefore(this.vimChordStatusBar, parent.firstChild)
+				this.vimChordStatusBar.parentElement.insertBefore(this.vimChordStatusBar, parent.firstChild)
+				this.vimChordStatusBar.style.marginRight = "auto"
+				this.vimChordStatusBar.style.marginLeft = "auto"
+				this.vimStatusBar.setText(vimStatus.normal)
+				// See https://codemirror.net/doc/manual.html#vimapi_events for events.
+				CodeMirror.on(cmEditor, "vim-keypress", async (vimKey: any) => {
+					if (vimKey != "<Esc>") {
+						this.currentKeyChord.push(vimKey);
+					} else {
+						this.currentKeyChord = [];
+					}
+					// Build keychord text
+					var tempS = ""
+					for (const s of this.currentKeyChord) {
+						tempS += " " + s
+					}
+					if (tempS != "") {
+						tempS += "-"
+					}
+					this.vimChordStatusBar.setText(tempS);
+				});
+				CodeMirror.on(cmEditor, "vim-command-done", async (reason: any) => {
+					this.vimChordStatusBar.setText("");
+					this.currentKeyChord = [];
+				});
+				CodeMirror.on(cmEditor, "vim-mode-change", async (modeObj: any) => {
+					switch (modeObj.mode) {
+						case "insert":
+							this.currentVimStatus = vimStatus.insert;
+							break;
+						case "normal":
+							this.currentVimStatus = vimStatus.normal;
+							break;
+						case "visual":
+							this.currentVimStatus = vimStatus.visual;
+							break;
+						case "replace":
+							this.currentVimStatus = vimStatus.replace;
+							break;
+						default:
+							break;
+					}
+					
+					this.vimStatusBar.setText(this.currentVimStatus);
+				});
 
 				// Make sure that we load it just once per CodeMirror instance.
 				// This is supposed to work because the Vim state is kept at the keymap level, hopefully

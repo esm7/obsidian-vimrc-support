@@ -4,11 +4,15 @@ import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
 declare const CodeMirror: any;
 
 interface Settings {
-	vimrcFileName: string
+	vimrcFileName: string,
+	displayChord: boolean,
+	displayVimMode: boolean
 }
 
 const DEFAULT_SETTINGS: Settings = {
-	vimrcFileName: ".obsidian.vimrc"
+	vimrcFileName: ".obsidian.vimrc",
+	displayChord: false,
+	displayVimMode: false
 }
 
 const enum vimStatus {
@@ -28,10 +32,11 @@ export default class VimrcPlugin extends Plugin {
 	private lastYankBuffer = new Array<string>(0);
 	private lastSystemClipboard = "";
 	private yankToSystemClipboard: boolean = false;
-	private currentKeyChord: string[] = [];
+	private currentKeyChord: any = [];
 	private vimChordStatusBar: HTMLElement = null;
 	private vimStatusBar: HTMLElement = null;
 	private currentVimStatus: vimStatus = vimStatus.normal;
+	private customVimKeybinds: { [name: string]: boolean } = {};
 
 	async onload() {
 		console.log('loading Vimrc plugin');
@@ -104,7 +109,7 @@ export default class VimrcPlugin extends Plugin {
 					if (!params?.args?.length) {
 						throw new Error('Invalid mapping: noremap');
 					}
-				
+
 					if (params.argString.trim()) {
 						CodeMirror.Vim.noremap.apply(CodeMirror.Vim, params.args);
 					}
@@ -123,13 +128,13 @@ export default class VimrcPlugin extends Plugin {
 						CodeMirror.Vim.handleEx(cm, commandContent);
 					});
 				});
-				
+
 				CodeMirror.Vim.defineEx('sendkeys', '', async (cm: any, params: any) => {
 					if (!params?.args?.length) {
 						console.log(params);
 						throw new Error(`The sendkeys command requires a list of keys, e.g. sendKeys Ctrl+p a b Enter`);
 					}
-					
+
 					let allGood = true;
 					let events: KeyboardEvent[] = [];
 					for (const key of params.args) {
@@ -150,7 +155,7 @@ export default class VimrcPlugin extends Plugin {
 							if (allGood) {
 								for (keyEvent of events)
 									window.postMessage(JSON.parse(JSON.stringify(keyEvent)), '*');
-									// view.containerEl.dispatchEvent(keyEvent);
+								// view.containerEl.dispatchEvent(keyEvent);
 							}
 						}
 					}
@@ -183,62 +188,89 @@ export default class VimrcPlugin extends Plugin {
 				});
 
 				vimCommands.split("\n").forEach(
-					function(line, index, arr) {
+					function (line: string, index: number, arr: [string]) {
 						if (line.trim().length > 0 && line.trim()[0] != '"') {
+							var split = line.split(" ")
+							if (split[0] == "nmap" || split[0] == "map") { // TODO figure out if this works for all mapping functions.
+								// Have to do this because "vim-command-done" event doesn't actually work properly, or something.
+								this.customVimKeybinds[split[1]] = true
+							}
 							CodeMirror.Vim.handleEx(cmEditor, line);
 						}
-					}
+					}.bind(this) // Faster than an arrow function. https://stackoverflow.com/questions/50375440/binding-vs-arrow-function-for-react-onclick-event
 				)
 
-				this.vimStatusBar = this.addStatusBarItem()
-				this.vimChordStatusBar = this.addStatusBarItem()
-				var parent = this.vimChordStatusBar.parentElement
-				this.vimChordStatusBar.parentElement.insertBefore(this.vimChordStatusBar, parent.firstChild)
-				this.vimChordStatusBar.parentElement.insertBefore(this.vimChordStatusBar, parent.firstChild)
-				this.vimChordStatusBar.style.marginRight = "auto"
-				this.vimChordStatusBar.style.marginLeft = "auto"
-				this.vimStatusBar.setText(vimStatus.normal)
-				// See https://codemirror.net/doc/manual.html#vimapi_events for events.
-				CodeMirror.on(cmEditor, "vim-keypress", async (vimKey: any) => {
-					if (vimKey != "<Esc>") {
-						this.currentKeyChord.push(vimKey);
-					} else {
+				if (this.settings.displayChord) {
+					// Add status bar item
+					this.vimChordStatusBar = this.addStatusBarItem()
+
+					// Move vimChordStatusBar to the leftmost position and center it.
+					var parent = this.vimChordStatusBar.parentElement
+					this.vimChordStatusBar.parentElement.insertBefore(this.vimChordStatusBar, parent.firstChild)
+					this.vimChordStatusBar.style.marginRight = "auto"
+					this.vimChordStatusBar.style.marginLeft = "auto"
+
+					// See https://codemirror.net/doc/manual.html#vimapi_events for events.
+					CodeMirror.on(cmEditor, "vim-keypress", async (vimKey: any) => {
+
+						if (vimKey != "<Esc>") { // TODO figure out what to actually look for to exit commands.
+							this.currentKeyChord.push(vimKey);
+							if (this.customVimKeybinds[this.currentKeyChord.join("")] != undefined) {
+								// Custom key chord exists.
+								this.currentKeyChord = [];
+							}
+						} else {
+							this.currentKeyChord = [];
+						}
+
+						// Build keychord text
+						var tempS = ""
+						for (const s of this.currentKeyChord) {
+							tempS += " " + s
+						}
+						if (tempS != "") {
+							tempS += "-"
+						}
+						this.vimChordStatusBar.setText(tempS);
+					});
+					CodeMirror.on(cmEditor, "vim-command-done", async (reason: any) => {
+						// Reset display
+						this.vimChordStatusBar.setText("");
 						this.currentKeyChord = [];
-					}
-					// Build keychord text
-					var tempS = ""
-					for (const s of this.currentKeyChord) {
-						tempS += " " + s
-					}
-					if (tempS != "") {
-						tempS += "-"
-					}
-					this.vimChordStatusBar.setText(tempS);
-				});
-				CodeMirror.on(cmEditor, "vim-command-done", async (reason: any) => {
-					this.vimChordStatusBar.setText("");
-					this.currentKeyChord = [];
-				});
-				CodeMirror.on(cmEditor, "vim-mode-change", async (modeObj: any) => {
-					switch (modeObj.mode) {
-						case "insert":
-							this.currentVimStatus = vimStatus.insert;
-							break;
-						case "normal":
-							this.currentVimStatus = vimStatus.normal;
-							break;
-						case "visual":
-							this.currentVimStatus = vimStatus.visual;
-							break;
-						case "replace":
-							this.currentVimStatus = vimStatus.replace;
-							break;
-						default:
-							break;
-					}
-					
-					this.vimStatusBar.setText(this.currentVimStatus);
-				});
+					});
+
+				}
+
+				if (this.settings.displayVimMode) {
+
+					// Add status bar item
+					this.vimStatusBar = this.addStatusBarItem()
+
+					// Init the vimStatusBar with normal mode
+					this.vimStatusBar.setText(vimStatus.normal)
+
+					// See https://codemirror.net/doc/manual.html#vimapi_events for events.
+					CodeMirror.on(cmEditor, "vim-mode-change", async (modeObj: any) => {
+						switch (modeObj.mode) {
+							case "insert":
+								this.currentVimStatus = vimStatus.insert;
+								break;
+							case "normal":
+								this.currentVimStatus = vimStatus.normal;
+								break;
+							case "visual":
+								this.currentVimStatus = vimStatus.visual;
+								break;
+							case "replace":
+								this.currentVimStatus = vimStatus.replace;
+								break;
+							default:
+								break;
+						}
+
+						this.vimStatusBar.setText(this.currentVimStatus);
+					});
+				}
 
 				// Make sure that we load it just once per CodeMirror instance.
 				// This is supposed to work because the Vim state is kept at the keymap level, hopefully
@@ -280,11 +312,11 @@ class SettingsTab extends PluginSettingTab {
 	}
 
 	display(): void {
-		let {containerEl} = this;
+		let { containerEl } = this;
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Vimrc Settings'});
+		containerEl.createEl('h2', { text: 'Vimrc Settings' });
 
 		new Setting(containerEl)
 			.setName('Vimrc file name')
@@ -295,6 +327,30 @@ class SettingsTab extends PluginSettingTab {
 					text.setValue(this.plugin.settings.vimrcFileName)
 				text.onChange(value => {
 					this.plugin.settings.vimrcFileName = value || DEFAULT_SETTINGS.vimrcFileName;
+					this.plugin.saveSettings();
+				})
+			});
+
+		new Setting(containerEl)
+			.setName('Vim chord display')
+			.setDesc('Displays the current chord until completion. Ex: "<Space> f-" (requires restart)')
+			.addToggle((toggle) => {
+				if (this.plugin.settings.displayChord !== DEFAULT_SETTINGS.displayChord)
+					toggle.setValue(this.plugin.settings.displayChord)
+				toggle.onChange(value => {
+					this.plugin.settings.displayChord = value || DEFAULT_SETTINGS.displayChord;
+					this.plugin.saveSettings();
+				})
+			});
+
+		new Setting(containerEl)
+			.setName('Vim mode display')
+			.setDesc('Displays the current vim mode (requires restart)')
+			.addToggle((toggle) => {
+				if (this.plugin.settings.displayVimMode !== DEFAULT_SETTINGS.displayVimMode)
+					toggle.setValue(this.plugin.settings.displayVimMode)
+				toggle.onChange(value => {
+					this.plugin.settings.displayVimMode = value || DEFAULT_SETTINGS.displayVimMode;
 					this.plugin.saveSettings();
 				})
 			});

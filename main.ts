@@ -101,12 +101,6 @@ export default class VimrcPlugin extends Plugin {
 					}
 				});
 
-				CodeMirror.Vim.defineOption('displayChord', 4, 'number', [], (value: number, cm: any) => {
-					if (value) {
-						cmEditor.setOption('tabSize', value);
-					}
-				});
-
 				CodeMirror.Vim.defineEx('iunmap', '', (cm: any, params: any) => {
 					if (params.argString.trim()) {
 						CodeMirror.Vim.unmap(params.argString.trim(), 'insert');

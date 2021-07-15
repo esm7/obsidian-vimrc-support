@@ -1,5 +1,5 @@
-import { App, Plugin, TFile, MarkdownView, PluginSettingTab, Setting } from 'obsidian';
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
+import { App, MarkdownView, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
 
 declare const CodeMirror: any;
 
@@ -37,6 +37,7 @@ export default class VimrcPlugin extends Plugin {
 	private vimStatusBar: HTMLElement = null;
 	private currentVimStatus: vimStatus = vimStatus.normal;
 	private customVimKeybinds: { [name: string]: boolean } = {};
+	private currentSelection: CodeMirror.Range = null;
 
 	async onload() {
 		console.log('loading Vimrc plugin');
@@ -93,7 +94,14 @@ export default class VimrcPlugin extends Plugin {
 						}
 					}
 				});
+
 				CodeMirror.Vim.defineOption('tabstop', 4, 'number', [], (value: number, cm: any) => {
+					if (value) {
+						cmEditor.setOption('tabSize', value);
+					}
+				});
+
+				CodeMirror.Vim.defineOption('displayChord', 4, 'number', [], (value: number, cm: any) => {
 					if (value) {
 						cmEditor.setOption('tabSize', value);
 					}
@@ -187,6 +195,21 @@ export default class VimrcPlugin extends Plugin {
 						throw new Error(`Command ${command} was not found, try 'obcommand' with no params to see in the developer console what's available`);
 				});
 
+				CodeMirror.Vim.defineEx("surround", "", async (cm: CodeMirror.Editor, params: any) => {
+					if (!params?.args?.length || params.args.length != 2) {
+						throw new Error("surround requires exactly 2 parameters.")
+					}
+					var beginning = params.args[0]
+					var ending = params.args[1]
+					var currText = cmEditor.getRange(this.currentSelection.anchor, this.currentSelection.head)
+					cmEditor.replaceRange(beginning + currText + ending, this.currentSelection.anchor, this.currentSelection.head)
+				});
+
+				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
+					this.currentSelection = cmEditor.listSelections()[0]
+				})
+
+
 				vimCommands.split("\n").forEach(
 					function (line: string, index: number, arr: [string]) {
 						if (line.trim().length > 0 && line.trim()[0] != '"') {
@@ -215,8 +238,7 @@ export default class VimrcPlugin extends Plugin {
 
 						if (vimKey != "<Esc>") { // TODO figure out what to actually look for to exit commands.
 							this.currentKeyChord.push(vimKey);
-							if (this.customVimKeybinds[this.currentKeyChord.join("")] != undefined) {
-								// Custom key chord exists.
+							if (this.customVimKeybinds[this.currentKeyChord.join("")] != undefined) { // Custom key chord exists.
 								this.currentKeyChord = [];
 							}
 						} else {
@@ -233,8 +255,7 @@ export default class VimrcPlugin extends Plugin {
 						}
 						this.vimChordStatusBar.setText(tempS);
 					});
-					CodeMirror.on(cmEditor, "vim-command-done", async (reason: any) => {
-						// Reset display
+					CodeMirror.on(cmEditor, "vim-command-done", async (reason: any) => { // Reset display
 						this.vimChordStatusBar.setText("");
 						this.currentKeyChord = [];
 					});
@@ -242,12 +263,8 @@ export default class VimrcPlugin extends Plugin {
 				}
 
 				if (this.settings.displayVimMode) {
-
-					// Add status bar item
-					this.vimStatusBar = this.addStatusBarItem()
-
-					// Init the vimStatusBar with normal mode
-					this.vimStatusBar.setText(vimStatus.normal)
+					this.vimStatusBar = this.addStatusBarItem() // Add status bar item
+					this.vimStatusBar.setText(vimStatus.normal) // Init the vimStatusBar with normal mode
 
 					// See https://codemirror.net/doc/manual.html#vimapi_events for events.
 					CodeMirror.on(cmEditor, "vim-mode-change", async (modeObj: any) => {

@@ -48,6 +48,7 @@ In addition to that:
 - Custom mapping/unmapping commands in addition to the defaults: `noremap` and `iunmap` (PRs are welcome to implement more :) )
 - `exmap [commandName] [command...]`: a command to map Ex commands. This should basically be supported in regular `:map`, but doesn't work with multi-argument commands due to a CodeMirror bug, so this is a workaround.
 - `obcommand` - execute Obsidian commands, see more details below.
+- `surround` - surround your selected text in visual mode with text.
 
 Commands that fail don't generate any visible error for now.
 
@@ -97,6 +98,26 @@ And many more.
 **WARNING:** this is not a formal API that Obsidian provides and is done in a rather hacky manner.
 It's definitely possible that some future version of Obsidian will break this functionality.
 
+## Surround Text with `surround`
+
+The plugin defines a custom Ex command named `surround` to surround either your currently selected text in visual mode or the word your cursor is over with text.
+This is particularly useful for creating wikilinks in Obsidian `[[WikiLink]]`.
+
+The syntax follows `:surround [prefixText] [postfixText]`.
+
+Some examples:
+- `surround ( )`
+- `surround [[ ]]`
+
+Here's my surround config as an example:
+
+```
+" Surround text with [[ ]] to make a wikilink
+" NOTE: must use 'map' and not 'nmap'
+exmap wiki surround [[ ]]
+map [[ :wiki
+```
+
 ### Mapping Obsidian Commands Within Vim
 
 Next thing you probably wanna ask is "how do I map the great Obsidian commands to Vim commands?"
@@ -114,6 +135,12 @@ nmap <C-o> :back
 ```
 
 Note how `exmap` lists command names without colons and in `nmap` the colon is required.
+
+## Some Help with Binding Space Chords (Doom and Spacemacs fans)
+
+`<Space>` can be bound to make chords, such as `<Space>fs` in conjunction with obcommand to save your current file and more.
+But first `<Space>` must be unbound with `unmap <Space>`.
+Otherwise `<Space>` can be mapped normally as any other key.
 
 ## Changelog
 

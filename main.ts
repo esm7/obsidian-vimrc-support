@@ -22,6 +22,13 @@ const enum vimStatus {
 	visual = "🟡"
 }
 
+// NOTE: to future maintainers, please make sure all mapping commands are included in this array.
+const mappingCommands: String[] = [
+	"map",
+	"nmap",
+	"noremap",
+]
+
 function sleep(ms: number) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -189,26 +196,32 @@ export default class VimrcPlugin extends Plugin {
 						throw new Error(`Command ${command} was not found, try 'obcommand' with no params to see in the developer console what's available`);
 				});
 
-				CodeMirror.Vim.defineEx("surround", "", async (cm: CodeMirror.Editor, params: any) => {
+				CodeMirror.Vim.defineEx("surround", "", (cm: CodeMirror.Editor, params: any) => {
 					if (!params?.args?.length || params.args.length != 2) {
-						throw new Error("surround requires exactly 2 parameters.")
+						throw new Error("surround requires exactly 2 parameters: prefix and postfix text.")
 					}
 					var beginning = params.args[0]
 					var ending = params.args[1]
-					var currText = cmEditor.getRange(this.currentSelection.anchor, this.currentSelection.head)
-					cmEditor.replaceRange(beginning + currText + ending, this.currentSelection.anchor, this.currentSelection.head)
+					if (this.currentSelection.anchor == this.currentSelection.head) {
+						// No range of selected text, so select word.
+						var wordRange = cmEditor.findWordAt(this.currentSelection.anchor)
+						var currText = cmEditor.getRange(wordRange.anchor, wordRange.head)
+						cmEditor.replaceRange(beginning + currText + ending, wordRange.anchor, wordRange.head)
+					} else {
+						var currText = cmEditor.getRange(this.currentSelection.anchor, this.currentSelection.head)
+						cmEditor.replaceRange(beginning + currText + ending, this.currentSelection.anchor, this.currentSelection.head)
+					}
 				});
 
 				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
 					this.currentSelection = cmEditor.listSelections()[0]
 				})
 
-
 				vimCommands.split("\n").forEach(
 					function (line: string, index: number, arr: [string]) {
 						if (line.trim().length > 0 && line.trim()[0] != '"') {
 							var split = line.split(" ")
-							if (split[0] == "nmap" || split[0] == "map") { // TODO figure out if this works for all mapping functions.
+							if (mappingCommands.includes(split[0])) {
 								// Have to do this because "vim-command-done" event doesn't actually work properly, or something.
 								this.customVimKeybinds[split[1]] = true
 							}
@@ -225,7 +238,7 @@ export default class VimrcPlugin extends Plugin {
 					var parent = this.vimChordStatusBar.parentElement
 					this.vimChordStatusBar.parentElement.insertBefore(this.vimChordStatusBar, parent.firstChild)
 					this.vimChordStatusBar.style.marginRight = "auto"
-					this.vimChordStatusBar.style.marginLeft = "auto"
+					// this.vimChordStatusBar.style.marginLeft = "auto"
 
 					// See https://codemirror.net/doc/manual.html#vimapi_events for events.
 					CodeMirror.on(cmEditor, "vim-keypress", async (vimKey: any) => {

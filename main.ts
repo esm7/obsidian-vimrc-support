@@ -196,7 +196,8 @@ export default class VimrcPlugin extends Plugin {
 						throw new Error(`Command ${command} was not found, try 'obcommand' with no params to see in the developer console what's available`);
 				});
 
-				CodeMirror.Vim.defineEx("surround", "", (cm: CodeMirror.Editor, params: any) => {
+				// Function to surround selected text or highlighted word.
+				var surroundFunc = (cm: CodeMirror.Editor, params: any) => {
 					if (!params?.args?.length || params.args.length != 2) {
 						throw new Error("surround requires exactly 2 parameters: prefix and postfix text.")
 					}
@@ -211,7 +212,29 @@ export default class VimrcPlugin extends Plugin {
 						var currText = cmEditor.getRange(this.currentSelection.anchor, this.currentSelection.head)
 						cmEditor.replaceRange(beginning + currText + ending, this.currentSelection.anchor, this.currentSelection.head)
 					}
-				});
+				}
+
+				CodeMirror.Vim.defineEx("surround", "", surroundFunc);
+
+				var surroundDialogCallback = (value: string) => {
+					if ((/^\[+$/).test(value)) { // check for 1-inf [ and match them with ]
+						surroundFunc(cmEditor, { args: [value, "]".repeat(value.length)] })
+					} else if ((/^\(+$/).test(value)) { // check for 1-inf ( and match them with )
+						surroundFunc(cmEditor, { args: [value, ")".repeat(value.length)] })
+					} else if ((/^\{+$/).test(value)) { // check for 1-inf { and match them with }
+						surroundFunc(cmEditor, { args: [value, "}".repeat(value.length)] })
+					} else { // Else, just put it before and after.
+						surroundFunc(cmEditor, { args: [value, value] })
+					}
+				}
+
+				CodeMirror.Vim.defineOperator("surroundOperator", (cm: any, args: any, ranges: any) => {
+					var p = "<span>Surround with: <input type='text'></span>"
+					cm.openDialog(p, surroundDialogCallback, { bottom: true, selectValueOnOpen: false })
+				})
+
+				CodeMirror.Vim.mapCommand("<A-y>s", "operator", "surroundOperator")
+				// CodeMirror.Vim.mapCommand("<A-d>s", "operator", "surroundOperator")
 
 				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
 					this.currentSelection = cmEditor.listSelections()[0]

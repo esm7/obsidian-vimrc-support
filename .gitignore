@@ -2,6 +2,9 @@
 *.iml
 .idea
 
+# My deployment script
+*.sh
+
 # npm
 node_modules
 package-lock.json

@@ -1,15 +1,33 @@
-import { App, Plugin, TFile, MarkdownView, PluginSettingTab, Setting } from 'obsidian';
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
+import { App, MarkdownView, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
 
 declare const CodeMirror: any;
 
 interface Settings {
-	vimrcFileName: string
+	vimrcFileName: string,
+	displayChord: boolean,
+	displayVimMode: boolean
 }
 
 const DEFAULT_SETTINGS: Settings = {
-	vimrcFileName: ".obsidian.vimrc"
+	vimrcFileName: ".obsidian.vimrc",
+	displayChord: false,
+	displayVimMode: false
 }
+
+const enum vimStatus {
+	normal = "🟢",
+	insert = "🟠",
+	replace = "🔴",
+	visual = "🟡"
+}
+
+// NOTE: to future maintainers, please make sure all mapping commands are included in this array.
+const mappingCommands: String[] = [
+	"map",
+	"nmap",
+	"noremap",
+]
 
 function sleep(ms: number) {
 	return new Promise(resolve => setTimeout(resolve, ms));
@@ -21,6 +39,12 @@ export default class VimrcPlugin extends Plugin {
 	private lastYankBuffer = new Array<string>(0);
 	private lastSystemClipboard = "";
 	private yankToSystemClipboard: boolean = false;
+	private currentKeyChord: any = [];
+	private vimChordStatusBar: HTMLElement = null;
+	private vimStatusBar: HTMLElement = null;
+	private currentVimStatus: vimStatus = vimStatus.normal;
+	private customVimKeybinds: { [name: string]: boolean } = {};
+	private currentSelection: CodeMirror.Range = null;
 
 	async onload() {
 		console.log('loading Vimrc plugin');
@@ -77,6 +101,7 @@ export default class VimrcPlugin extends Plugin {
 						}
 					}
 				});
+
 				CodeMirror.Vim.defineOption('tabstop', 4, 'number', [], (value: number, cm: any) => {
 					if (value) {
 						cmEditor.setOption('tabSize', value);
@@ -93,7 +118,7 @@ export default class VimrcPlugin extends Plugin {
 					if (!params?.args?.length) {
 						throw new Error('Invalid mapping: noremap');
 					}
-				
+
 					if (params.argString.trim()) {
 						CodeMirror.Vim.noremap.apply(CodeMirror.Vim, params.args);
 					}
@@ -112,13 +137,13 @@ export default class VimrcPlugin extends Plugin {
 						CodeMirror.Vim.handleEx(cm, commandContent);
 					});
 				});
-				
+
 				CodeMirror.Vim.defineEx('sendkeys', '', async (cm: any, params: any) => {
 					if (!params?.args?.length) {
 						console.log(params);
 						throw new Error(`The sendkeys command requires a list of keys, e.g. sendKeys Ctrl+p a b Enter`);
 					}
-					
+
 					let allGood = true;
 					let events: KeyboardEvent[] = [];
 					for (const key of params.args) {
@@ -139,7 +164,7 @@ export default class VimrcPlugin extends Plugin {
 							if (allGood) {
 								for (keyEvent of events)
 									window.postMessage(JSON.parse(JSON.stringify(keyEvent)), '*');
-									// view.containerEl.dispatchEvent(keyEvent);
+								// view.containerEl.dispatchEvent(keyEvent);
 							}
 						}
 					}
@@ -171,13 +196,128 @@ export default class VimrcPlugin extends Plugin {
 						throw new Error(`Command ${command} was not found, try 'obcommand' with no params to see in the developer console what's available`);
 				});
 
+				// Function to surround selected text or highlighted word.
+				var surroundFunc = (cm: CodeMirror.Editor, params: any) => {
+					if (!params?.args?.length || params.args.length != 2) {
+						throw new Error("surround requires exactly 2 parameters: prefix and postfix text.")
+					}
+					var beginning = params.args[0]
+					var ending = params.args[1]
+					if (this.currentSelection.anchor == this.currentSelection.head) {
+						// No range of selected text, so select word.
+						var wordRange = cmEditor.findWordAt(this.currentSelection.anchor)
+						var currText = cmEditor.getRange(wordRange.anchor, wordRange.head)
+						cmEditor.replaceRange(beginning + currText + ending, wordRange.anchor, wordRange.head)
+					} else {
+						var currText = cmEditor.getRange(this.currentSelection.anchor, this.currentSelection.head)
+						cmEditor.replaceRange(beginning + currText + ending, this.currentSelection.anchor, this.currentSelection.head)
+					}
+				}
+
+				CodeMirror.Vim.defineEx("surround", "", surroundFunc);
+
+				var surroundDialogCallback = (value: string) => {
+					if ((/^\[+$/).test(value)) { // check for 1-inf [ and match them with ]
+						surroundFunc(cmEditor, { args: [value, "]".repeat(value.length)] })
+					} else if ((/^\(+$/).test(value)) { // check for 1-inf ( and match them with )
+						surroundFunc(cmEditor, { args: [value, ")".repeat(value.length)] })
+					} else if ((/^\{+$/).test(value)) { // check for 1-inf { and match them with }
+						surroundFunc(cmEditor, { args: [value, "}".repeat(value.length)] })
+					} else { // Else, just put it before and after.
+						surroundFunc(cmEditor, { args: [value, value] })
+					}
+				}
+
+				CodeMirror.Vim.defineOperator("surroundOperator", (cm: any, args: any, ranges: any) => {
+					var p = "<span>Surround with: <input type='text'></span>"
+					cm.openDialog(p, surroundDialogCallback, { bottom: true, selectValueOnOpen: false })
+				})
+
+				CodeMirror.Vim.mapCommand("<A-y>s", "operator", "surroundOperator")
+				// CodeMirror.Vim.mapCommand("<A-d>s", "operator", "surroundOperator")
+
+				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
+					this.currentSelection = cmEditor.listSelections()[0]
+				})
+
 				vimCommands.split("\n").forEach(
-					function(line, index, arr) {
+					function (line: string, index: number, arr: [string]) {
 						if (line.trim().length > 0 && line.trim()[0] != '"') {
+							var split = line.split(" ")
+							if (mappingCommands.includes(split[0])) {
+								// Have to do this because "vim-command-done" event doesn't actually work properly, or something.
+								this.customVimKeybinds[split[1]] = true
+							}
 							CodeMirror.Vim.handleEx(cmEditor, line);
 						}
-					}
+					}.bind(this) // Faster than an arrow function. https://stackoverflow.com/questions/50375440/binding-vs-arrow-function-for-react-onclick-event
 				)
+
+				if (this.settings.displayChord) {
+					// Add status bar item
+					this.vimChordStatusBar = this.addStatusBarItem()
+
+					// Move vimChordStatusBar to the leftmost position and center it.
+					var parent = this.vimChordStatusBar.parentElement
+					this.vimChordStatusBar.parentElement.insertBefore(this.vimChordStatusBar, parent.firstChild)
+					this.vimChordStatusBar.style.marginRight = "auto"
+					// this.vimChordStatusBar.style.marginLeft = "auto"
+
+					// See https://codemirror.net/doc/manual.html#vimapi_events for events.
+					CodeMirror.on(cmEditor, "vim-keypress", async (vimKey: any) => {
+
+						if (vimKey != "<Esc>") { // TODO figure out what to actually look for to exit commands.
+							this.currentKeyChord.push(vimKey);
+							if (this.customVimKeybinds[this.currentKeyChord.join("")] != undefined) { // Custom key chord exists.
+								this.currentKeyChord = [];
+							}
+						} else {
+							this.currentKeyChord = [];
+						}
+
+						// Build keychord text
+						var tempS = ""
+						for (const s of this.currentKeyChord) {
+							tempS += " " + s
+						}
+						if (tempS != "") {
+							tempS += "-"
+						}
+						this.vimChordStatusBar.setText(tempS);
+					});
+					CodeMirror.on(cmEditor, "vim-command-done", async (reason: any) => { // Reset display
+						this.vimChordStatusBar.setText("");
+						this.currentKeyChord = [];
+					});
+
+				}
+
+				if (this.settings.displayVimMode) {
+					this.vimStatusBar = this.addStatusBarItem() // Add status bar item
+					this.vimStatusBar.setText(vimStatus.normal) // Init the vimStatusBar with normal mode
+
+					// See https://codemirror.net/doc/manual.html#vimapi_events for events.
+					CodeMirror.on(cmEditor, "vim-mode-change", async (modeObj: any) => {
+						switch (modeObj.mode) {
+							case "insert":
+								this.currentVimStatus = vimStatus.insert;
+								break;
+							case "normal":
+								this.currentVimStatus = vimStatus.normal;
+								break;
+							case "visual":
+								this.currentVimStatus = vimStatus.visual;
+								break;
+							case "replace":
+								this.currentVimStatus = vimStatus.replace;
+								break;
+							default:
+								break;
+						}
+
+						this.vimStatusBar.setText(this.currentVimStatus);
+					});
+				}
 
 				// Make sure that we load it just once per CodeMirror instance.
 				// This is supposed to work because the Vim state is kept at the keymap level, hopefully
@@ -219,11 +359,11 @@ class SettingsTab extends PluginSettingTab {
 	}
 
 	display(): void {
-		let {containerEl} = this;
+		let { containerEl } = this;
 
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Vimrc Settings'});
+		containerEl.createEl('h2', { text: 'Vimrc Settings' });
 
 		new Setting(containerEl)
 			.setName('Vimrc file name')
@@ -234,6 +374,30 @@ class SettingsTab extends PluginSettingTab {
 					text.setValue(this.plugin.settings.vimrcFileName)
 				text.onChange(value => {
 					this.plugin.settings.vimrcFileName = value || DEFAULT_SETTINGS.vimrcFileName;
+					this.plugin.saveSettings();
+				})
+			});
+
+		new Setting(containerEl)
+			.setName('Vim chord display')
+			.setDesc('Displays the current chord until completion. Ex: "<Space> f-" (requires restart)')
+			.addToggle((toggle) => {
+				if (this.plugin.settings.displayChord !== DEFAULT_SETTINGS.displayChord)
+					toggle.setValue(this.plugin.settings.displayChord)
+				toggle.onChange(value => {
+					this.plugin.settings.displayChord = value || DEFAULT_SETTINGS.displayChord;
+					this.plugin.saveSettings();
+				})
+			});
+
+		new Setting(containerEl)
+			.setName('Vim mode display')
+			.setDesc('Displays the current vim mode (requires restart)')
+			.addToggle((toggle) => {
+				if (this.plugin.settings.displayVimMode !== DEFAULT_SETTINGS.displayVimMode)
+					toggle.setValue(this.plugin.settings.displayVimMode)
+				toggle.onChange(value => {
+					this.plugin.settings.displayVimMode = value || DEFAULT_SETTINGS.displayVimMode;
 					this.plugin.saveSettings();
 				})
 			});

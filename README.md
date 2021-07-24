@@ -48,7 +48,8 @@ In addition to that:
 - Custom mapping/unmapping commands in addition to the defaults: `noremap` and `iunmap` (PRs are welcome to implement more :) )
 - `exmap [commandName] [command...]`: a command to map Ex commands. This should basically be supported in regular `:map`, but doesn't work with multi-argument commands due to a CodeMirror bug, so this is a workaround.
 - `obcommand` - execute Obsidian commands, see more details below.
-- `surround` - surround your selected text in visual mode with text.
+- `surround` - surround your selected text in visual mode or word in normal mode with text.
+- `pasteinto` - paste your current clipboard into your selected text in visual mode or word in normal mode. Useful for creating hyperlinks.
 
 Commands that fail don't generate any visible error for now.
 
@@ -100,7 +101,7 @@ It's definitely possible that some future version of Obsidian will break this fu
 
 ## Surround Text with `surround`
 
-The plugin defines a custom Ex command named `surround` to surround either your currently selected text in visual mode or the word your cursor is over with text.
+The plugin defines a custom Ex command named `surround` to surround either your currently selected text in visual mode or the word your cursor is over in normal mode with text.
 This is particularly useful for creating wikilinks in Obsidian `[[WikiLink]]`.
 
 The syntax follows `:surround [prefixText] [postfixText]`.
@@ -116,6 +117,17 @@ Here's my surround config as an example:
 " NOTE: must use 'map' and not 'nmap'
 exmap wiki surround [[ ]]
 map [[ :wiki
+```
+
+## Inserting Links/Hyperlinks with `pasteinto`
+
+The plugin defines a custom Ex command named `pasteinto` to paste text into your currently selected text in visual mode, or the word your cursor is over in normal mode.
+This is particularly useful for creating links/hyperlinks `[selected-text](paste)`.
+
+Here's my hyperlink config as an example:
+```
+" Maps pasteinto to Alt-p
+map <A-p> :pasteinto
 ```
 
 ### Mapping Obsidian Commands Within Vim
@@ -140,7 +152,7 @@ Note how `exmap` lists command names without colons and in `nmap` the colon is r
 
 `<Space>` can be bound to make chords, such as `<Space>fs` in conjunction with obcommand to save your current file and more.
 But first `<Space>` must be unbound with `unmap <Space>`.
-Otherwise `<Space>` can be mapped normally as any other key.
+Afterwards `<Space>` can be mapped normally as any other key.
 
 ## Changelog
 

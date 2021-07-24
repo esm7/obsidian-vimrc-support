@@ -201,21 +201,27 @@ export default class VimrcPlugin extends Plugin {
 					if (!params?.args?.length || params.args.length != 2) {
 						throw new Error("surround requires exactly 2 parameters: prefix and postfix text.")
 					}
-					var beginning = params.args[0]
-					var ending = params.args[1]
+					let beginning = params.args[0] // Get the beginning surround text
+					let ending = params.args[1] // Get the ending surround text
 					if (this.currentSelection.anchor == this.currentSelection.head) {
 						// No range of selected text, so select word.
-						var wordRange = cmEditor.findWordAt(this.currentSelection.anchor)
-						var currText = cmEditor.getRange(wordRange.anchor, wordRange.head)
-						cmEditor.replaceRange(beginning + currText + ending, wordRange.anchor, wordRange.head)
+						let wordRange = cmEditor.findWordAt(this.currentSelection.anchor)
+						let currText = cmEditor.getRange(wordRange.from(), wordRange.to())
+						cmEditor.replaceRange(beginning + currText + ending, wordRange.from(), wordRange.to())
 					} else {
-						var currText = cmEditor.getRange(this.currentSelection.anchor, this.currentSelection.head)
-						cmEditor.replaceRange(beginning + currText + ending, this.currentSelection.anchor, this.currentSelection.head)
+						let currText = cmEditor.getRange(this.currentSelection.from(), this.currentSelection.to())
+						cmEditor.replaceRange(beginning + currText + ending, this.currentSelection.from(), this.currentSelection.to())
 					}
 				}
 
 				CodeMirror.Vim.defineEx("surround", "", surroundFunc);
 
+				CodeMirror.Vim.defineEx("pasteinto", "", (cm: CodeMirror.Editor, params: any) => {
+					// Using the register for when this.yankToSystemClipboard == false
+					surroundFunc(cm, { args: ["[", "](" + CodeMirror.Vim.getRegisterController().getRegister('yank').keyBuffer + ")"] })
+				})
+
+				// Handle the surround dialog input
 				var surroundDialogCallback = (value: string) => {
 					if ((/^\[+$/).test(value)) { // check for 1-inf [ and match them with ]
 						surroundFunc(cmEditor, { args: [value, "]".repeat(value.length)] })
@@ -229,13 +235,15 @@ export default class VimrcPlugin extends Plugin {
 				}
 
 				CodeMirror.Vim.defineOperator("surroundOperator", (cm: any, args: any, ranges: any) => {
-					var p = "<span>Surround with: <input type='text'></span>"
+					let p = "<span>Surround with: <input type='text'></span>"
 					cm.openDialog(p, surroundDialogCallback, { bottom: true, selectValueOnOpen: false })
 				})
+
 
 				CodeMirror.Vim.mapCommand("<A-y>s", "operator", "surroundOperator")
 				// CodeMirror.Vim.mapCommand("<A-d>s", "operator", "surroundOperator")
 
+				// Record the position of selections
 				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
 					this.currentSelection = cmEditor.listSelections()[0]
 				})
@@ -243,7 +251,7 @@ export default class VimrcPlugin extends Plugin {
 				vimCommands.split("\n").forEach(
 					function (line: string, index: number, arr: [string]) {
 						if (line.trim().length > 0 && line.trim()[0] != '"') {
-							var split = line.split(" ")
+							let split = line.split(" ")
 							if (mappingCommands.includes(split[0])) {
 								// Have to do this because "vim-command-done" event doesn't actually work properly, or something.
 								this.customVimKeybinds[split[1]] = true
@@ -258,7 +266,7 @@ export default class VimrcPlugin extends Plugin {
 					this.vimChordStatusBar = this.addStatusBarItem()
 
 					// Move vimChordStatusBar to the leftmost position and center it.
-					var parent = this.vimChordStatusBar.parentElement
+					let parent = this.vimChordStatusBar.parentElement
 					this.vimChordStatusBar.parentElement.insertBefore(this.vimChordStatusBar, parent.firstChild)
 					this.vimChordStatusBar.style.marginRight = "auto"
 					// this.vimChordStatusBar.style.marginLeft = "auto"
@@ -276,7 +284,7 @@ export default class VimrcPlugin extends Plugin {
 						}
 
 						// Build keychord text
-						var tempS = ""
+						let tempS = ""
 						for (const s of this.currentKeyChord) {
 							tempS += " " + s
 						}

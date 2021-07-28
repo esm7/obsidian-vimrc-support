@@ -16,7 +16,7 @@
     "@rollup/plugin-typescript": "^6.1.0",
     "@types/node": "^14.14.6",
     "keyboardevent-from-electron-accelerator": "*",
-    "obsidian": "https://github.com/obsidianmd/obsidian-api/tarball/master",
+    "obsidian": "^0.12.11",
     "rollup": "^2.33.0",
     "tslib": "^2.0.3",
     "typescript": "^4.0.5"

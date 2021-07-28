@@ -156,6 +156,12 @@ Afterwards `<Space>` can be mapped normally as any other key.
 
 ## Changelog
 
+### Not released yet
+- `surround` and `pasteinto` commands (thanks @Andr3wD!)
+- Vim chord display (thanks @Andr3wD!)
+- Vim mode display (thanks @Andr3wD!)
+- Fixed [fold and unfold bug](https://github.com/esm7/obsidian-vimrc-support/issues/35).
+
 ### 0.3.1
 
 - Fixed some commands not working via `obcommand` (https://github.com/esm7/obsidian-vimrc-support/issues/32)

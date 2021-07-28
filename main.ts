@@ -56,9 +56,14 @@ export default class VimrcPlugin extends Plugin {
 			const VIMRC_FILE_NAME = this.settings.vimrcFileName;
 			this.app.vault.adapter.read(VIMRC_FILE_NAME).
 				then((lines) => this.readVimInit(lines)).
-				catch(error => { console.log('Error loading vimrc file', VIMRC_FILE_NAME, 'from the vault root') });
+				catch(error => { console.log('Error loading vimrc file', VIMRC_FILE_NAME, 'from the vault root', error) });
 		}));
 
+		// window.onkeydown = (ev: KeyboardEvent) => {
+		// 	console.log('key = ', ev.key, 'code = ', ev.code);
+		// 	ev.stopPropagation();
+		// 	return false;
+		// };
 		this.registerDomEvent(document, 'click', () => {
 			this.captureYankBuffer();
 		});
@@ -83,165 +88,23 @@ export default class VimrcPlugin extends Plugin {
 		console.log('unloading Vimrc plugin (but Vim commands that were already loaded will still work)');
 	}
 
+	private getActiveView() : MarkdownView {
+		return this.app.workspace.getActiveViewOfType(MarkdownView);
+	}
+
+	private getEditor(view: MarkdownView) : CodeMirror.Editor {
+		return view.sourceMode?.cmEditor;
+	}
+
 	readVimInit(vimCommands: string) {
-		var view = this.app.workspace.activeLeaf.view;
-		if (view.getViewType() == 'markdown') {
-			var markdownView = view as MarkdownView;
-			var cmEditor = markdownView.sourceMode.cmEditor;
+		let view = this.getActiveView();
+		if (view) {
+			var cmEditor = this.getEditor(view);
 			if (cmEditor && !CodeMirror.Vim.loadedVimrc) {
-				CodeMirror.Vim.defineOption('clipboard', '', 'string', ['clip'], (value: string, cm: any) => {
-					if (value) {
-						if (value.trim() == 'unnamed' || value.trim() == 'unnamedplus') {
-							if (!this.yankToSystemClipboard) {
-								this.yankToSystemClipboard = true;
-								console.log("Vim is now set to yank to system clipboard.");
-							}
-						} else {
-							throw new Error("Unrecognized clipboard option, supported are 'unnamed' and 'unnamedplus' (and they do the same)")
-						}
-					}
-				});
-
-				CodeMirror.Vim.defineOption('tabstop', 4, 'number', [], (value: number, cm: any) => {
-					if (value) {
-						cmEditor.setOption('tabSize', value);
-					}
-				});
-
-				CodeMirror.Vim.defineEx('iunmap', '', (cm: any, params: any) => {
-					if (params.argString.trim()) {
-						CodeMirror.Vim.unmap(params.argString.trim(), 'insert');
-					}
-				});
-
-				CodeMirror.Vim.defineEx('noremap', '', (cm: any, params: any) => {
-					if (!params?.args?.length) {
-						throw new Error('Invalid mapping: noremap');
-					}
-
-					if (params.argString.trim()) {
-						CodeMirror.Vim.noremap.apply(CodeMirror.Vim, params.args);
-					}
-				});
-
-				// Allow the user to register an Ex command
-				CodeMirror.Vim.defineEx('exmap', '', (cm: any, params: any) => {
-					if (params?.args?.length && params.args.length < 2) {
-						throw new Error(`exmap requires at least 2 parameters: [name] [actions...]`);
-					}
-					let commandName = params.args[0];
-					params.args.shift();
-					let commandContent = params.args.join(' ');
-					// The content of the user's Ex command is just the remaining parameters of the exmap command
-					CodeMirror.Vim.defineEx(commandName, '', (cm: any, params: any) => {
-						CodeMirror.Vim.handleEx(cm, commandContent);
-					});
-				});
-
-				CodeMirror.Vim.defineEx('sendkeys', '', async (cm: any, params: any) => {
-					if (!params?.args?.length) {
-						console.log(params);
-						throw new Error(`The sendkeys command requires a list of keys, e.g. sendKeys Ctrl+p a b Enter`);
-					}
-
-					let allGood = true;
-					let events: KeyboardEvent[] = [];
-					for (const key of params.args) {
-						if (key.startsWith('wait')) {
-							const delay = key.slice(4);
-							await sleep(delay * 1000);
-						}
-						else {
-							let keyEvent: KeyboardEvent = null;
-							try {
-								keyEvent = new KeyboardEvent('keydown', keyFromAccelerator.toKeyEvent(key));
-								events.push(keyEvent);
-							}
-							catch (e) {
-								allGood = false;
-								throw new Error(`Key '${key}' couldn't be read as an Electron Accelerator`);
-							}
-							if (allGood) {
-								for (keyEvent of events)
-									window.postMessage(JSON.parse(JSON.stringify(keyEvent)), '*');
-								// view.containerEl.dispatchEvent(keyEvent);
-							}
-						}
-					}
-				});
-
-				CodeMirror.Vim.defineEx('obcommand', '', async (cm: any, params: any) => {
-					const availableCommands = (this.app as any).commands.commands;
-					if (!params?.args?.length || params.args.length != 1) {
-						console.log(`Available commands: ${Object.keys(availableCommands).join('\n')}`)
-						throw new Error(`obcommand requires exactly 1 parameter`);
-					}
-					const command = params.args[0];
-					if (command in availableCommands) {
-						let callback = availableCommands[command].callback;
-						let checkCallback = availableCommands[command].checkCallback;
-						let editorCallback = availableCommands[command].editorCallback;
-						let editorCheckCallback = availableCommands[command].editorCheckCallback;
-						if (editorCheckCallback)
-							editorCheckCallback(false, markdownView.editor, markdownView);
-						else if (editorCallback)
-							editorCallback(markdownView.editor, markdownView);
-						else if (checkCallback)
-							checkCallback(false);
-						else if (callback)
-							callback();
-						else
-							throw new Error(`Command ${command} doesn't have an Obsidian callback`);
-					} else
-						throw new Error(`Command ${command} was not found, try 'obcommand' with no params to see in the developer console what's available`);
-				});
-
-				// Function to surround selected text or highlighted word.
-				var surroundFunc = (cm: CodeMirror.Editor, params: any) => {
-					if (!params?.args?.length || params.args.length != 2) {
-						throw new Error("surround requires exactly 2 parameters: prefix and postfix text.")
-					}
-					let beginning = params.args[0] // Get the beginning surround text
-					let ending = params.args[1] // Get the ending surround text
-					if (this.currentSelection.anchor == this.currentSelection.head) {
-						// No range of selected text, so select word.
-						let wordRange = cmEditor.findWordAt(this.currentSelection.anchor)
-						let currText = cmEditor.getRange(wordRange.from(), wordRange.to())
-						cmEditor.replaceRange(beginning + currText + ending, wordRange.from(), wordRange.to())
-					} else {
-						let currText = cmEditor.getRange(this.currentSelection.from(), this.currentSelection.to())
-						cmEditor.replaceRange(beginning + currText + ending, this.currentSelection.from(), this.currentSelection.to())
-					}
-				}
-
-				CodeMirror.Vim.defineEx("surround", "", surroundFunc);
-
-				CodeMirror.Vim.defineEx("pasteinto", "", (cm: CodeMirror.Editor, params: any) => {
-					// Using the register for when this.yankToSystemClipboard == false
-					surroundFunc(cm, { args: ["[", "](" + CodeMirror.Vim.getRegisterController().getRegister('yank').keyBuffer + ")"] })
-				})
-
-				// Handle the surround dialog input
-				var surroundDialogCallback = (value: string) => {
-					if ((/^\[+$/).test(value)) { // check for 1-inf [ and match them with ]
-						surroundFunc(cmEditor, { args: [value, "]".repeat(value.length)] })
-					} else if ((/^\(+$/).test(value)) { // check for 1-inf ( and match them with )
-						surroundFunc(cmEditor, { args: [value, ")".repeat(value.length)] })
-					} else if ((/^\{+$/).test(value)) { // check for 1-inf { and match them with }
-						surroundFunc(cmEditor, { args: [value, "}".repeat(value.length)] })
-					} else { // Else, just put it before and after.
-						surroundFunc(cmEditor, { args: [value, value] })
-					}
-				}
-
-				CodeMirror.Vim.defineOperator("surroundOperator", (cm: any, args: any, ranges: any) => {
-					let p = "<span>Surround with: <input type='text'></span>"
-					cm.openDialog(p, surroundDialogCallback, { bottom: true, selectValueOnOpen: false })
-				})
-
-
-				CodeMirror.Vim.mapCommand("<A-y>s", "operator", "surroundOperator")
-				// CodeMirror.Vim.mapCommand("<A-d>s", "operator", "surroundOperator")
+				this.defineBasicCommands(CodeMirror.Vim);
+				this.defineSendKeys(CodeMirror.Vim);
+				this.defineObCommand(CodeMirror.Vim);
+				this.defineSurround(CodeMirror.Vim);
 
 				// Record the position of selections
 				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
@@ -261,71 +124,8 @@ export default class VimrcPlugin extends Plugin {
 					}.bind(this) // Faster than an arrow function. https://stackoverflow.com/questions/50375440/binding-vs-arrow-function-for-react-onclick-event
 				)
 
-				if (this.settings.displayChord) {
-					// Add status bar item
-					this.vimChordStatusBar = this.addStatusBarItem()
-
-					// Move vimChordStatusBar to the leftmost position and center it.
-					let parent = this.vimChordStatusBar.parentElement
-					this.vimChordStatusBar.parentElement.insertBefore(this.vimChordStatusBar, parent.firstChild)
-					this.vimChordStatusBar.style.marginRight = "auto"
-					// this.vimChordStatusBar.style.marginLeft = "auto"
-
-					// See https://codemirror.net/doc/manual.html#vimapi_events for events.
-					CodeMirror.on(cmEditor, "vim-keypress", async (vimKey: any) => {
-
-						if (vimKey != "<Esc>") { // TODO figure out what to actually look for to exit commands.
-							this.currentKeyChord.push(vimKey);
-							if (this.customVimKeybinds[this.currentKeyChord.join("")] != undefined) { // Custom key chord exists.
-								this.currentKeyChord = [];
-							}
-						} else {
-							this.currentKeyChord = [];
-						}
-
-						// Build keychord text
-						let tempS = ""
-						for (const s of this.currentKeyChord) {
-							tempS += " " + s
-						}
-						if (tempS != "") {
-							tempS += "-"
-						}
-						this.vimChordStatusBar.setText(tempS);
-					});
-					CodeMirror.on(cmEditor, "vim-command-done", async (reason: any) => { // Reset display
-						this.vimChordStatusBar.setText("");
-						this.currentKeyChord = [];
-					});
-
-				}
-
-				if (this.settings.displayVimMode) {
-					this.vimStatusBar = this.addStatusBarItem() // Add status bar item
-					this.vimStatusBar.setText(vimStatus.normal) // Init the vimStatusBar with normal mode
-
-					// See https://codemirror.net/doc/manual.html#vimapi_events for events.
-					CodeMirror.on(cmEditor, "vim-mode-change", async (modeObj: any) => {
-						switch (modeObj.mode) {
-							case "insert":
-								this.currentVimStatus = vimStatus.insert;
-								break;
-							case "normal":
-								this.currentVimStatus = vimStatus.normal;
-								break;
-							case "visual":
-								this.currentVimStatus = vimStatus.visual;
-								break;
-							case "replace":
-								this.currentVimStatus = vimStatus.replace;
-								break;
-							default:
-								break;
-						}
-
-						this.vimStatusBar.setText(this.currentVimStatus);
-					});
-				}
+				this.prepareChordDisplay();
+				this.prepareVimModeDisplay();
 
 				// Make sure that we load it just once per CodeMirror instance.
 				// This is supposed to work because the Vim state is kept at the keymap level, hopefully
@@ -333,6 +133,171 @@ export default class VimrcPlugin extends Plugin {
 				CodeMirror.Vim.loadedVimrc = true;
 			}
 		}
+	}
+
+	defineBasicCommands(vimObject: any) {
+		vimObject.defineOption('clipboard', '', 'string', ['clip'], (value: string, cm: any) => {
+			if (value) {
+				if (value.trim() == 'unnamed' || value.trim() == 'unnamedplus') {
+					if (!this.yankToSystemClipboard) {
+						this.yankToSystemClipboard = true;
+						console.log("Vim is now set to yank to system clipboard.");
+					}
+				} else {
+					throw new Error("Unrecognized clipboard option, supported are 'unnamed' and 'unnamedplus' (and they do the same)")
+				}
+			}
+		});
+
+		vimObject.defineOption('tabstop', 4, 'number', [], (value: number, cm: any) => {
+			if (value && cm) {
+				cm.setOption('tabSize', value);
+			}
+		});
+
+		vimObject.defineEx('iunmap', '', (cm: any, params: any) => {
+			if (params.argString.trim()) {
+				CodeMirror.Vim.unmap(params.argString.trim(), 'insert');
+			}
+		});
+
+		vimObject.defineEx('noremap', '', (cm: any, params: any) => {
+			if (!params?.args?.length) {
+				throw new Error('Invalid mapping: noremap');
+			}
+
+			if (params.argString.trim()) {
+				CodeMirror.Vim.noremap.apply(CodeMirror.Vim, params.args);
+			}
+		});
+
+		// Allow the user to register an Ex command
+		vimObject.defineEx('exmap', '', (cm: any, params: any) => {
+			if (params?.args?.length && params.args.length < 2) {
+				throw new Error(`exmap requires at least 2 parameters: [name] [actions...]`);
+			}
+			let commandName = params.args[0];
+			params.args.shift();
+			let commandContent = params.args.join(' ');
+			// The content of the user's Ex command is just the remaining parameters of the exmap command
+			CodeMirror.Vim.defineEx(commandName, '', (cm: any, params: any) => {
+				CodeMirror.Vim.handleEx(cm, commandContent);
+			});
+		});
+	}
+	
+	defineSendKeys(vimObject: any) {
+		vimObject.defineEx('sendkeys', '', async (cm: any, params: any) => {
+			if (!params?.args?.length) {
+				console.log(params);
+				throw new Error(`The sendkeys command requires a list of keys, e.g. sendKeys Ctrl+p a b Enter`);
+			}
+
+			let allGood = true;
+			let events: KeyboardEvent[] = [];
+			for (const key of params.args) {
+				if (key.startsWith('wait')) {
+					const delay = key.slice(4);
+					await sleep(delay * 1000);
+				}
+				else {
+					let keyEvent: KeyboardEvent = null;
+					try {
+						keyEvent = new KeyboardEvent('keydown', keyFromAccelerator.toKeyEvent(key));
+						events.push(keyEvent);
+					}
+					catch (e) {
+						allGood = false;
+						throw new Error(`Key '${key}' couldn't be read as an Electron Accelerator`);
+					}
+					if (allGood) {
+						for (keyEvent of events)
+							window.postMessage(JSON.parse(JSON.stringify(keyEvent)), '*');
+						// view.containerEl.dispatchEvent(keyEvent);
+					}
+				}
+			}
+		});
+	}
+
+	defineObCommand(vimObject: any) {
+		vimObject.defineEx('obcommand', '', async (cm: any, params: any) => {
+			const availableCommands = (this.app as any).commands.commands;
+			if (!params?.args?.length || params.args.length != 1) {
+				console.log(`Available commands: ${Object.keys(availableCommands).join('\n')}`)
+				throw new Error(`obcommand requires exactly 1 parameter`);
+			}
+			let view = this.getActiveView();
+			let editor = view.editor;
+			const command = params.args[0];
+			if (command in availableCommands) {
+				let callback = availableCommands[command].callback;
+				let checkCallback = availableCommands[command].checkCallback;
+				let editorCallback = availableCommands[command].editorCallback;
+				let editorCheckCallback = availableCommands[command].editorCheckCallback;
+				if (editorCheckCallback)
+					editorCheckCallback(false, editor, view);
+				else if (editorCallback)
+					editorCallback(editor, view);
+				else if (checkCallback)
+					checkCallback(false);
+				else if (callback)
+					callback();
+				else
+					throw new Error(`Command ${command} doesn't have an Obsidian callback`);
+			} else
+				throw new Error(`Command ${command} was not found, try 'obcommand' with no params to see in the developer console what's available`);
+		});
+	}
+
+	defineSurround(vimObject: any) {
+		// Function to surround selected text or highlighted word.
+		var surroundFunc = (cm: CodeMirror.Editor, params: any) => {
+			if (!params?.args?.length || params.args.length != 2) {
+				throw new Error("surround requires exactly 2 parameters: prefix and postfix text.")
+			}
+			let beginning = params.args[0] // Get the beginning surround text
+			let ending = params.args[1] // Get the ending surround text
+			if (this.currentSelection.anchor == this.currentSelection.head) {
+				// No range of selected text, so select word.
+				let wordRange = cm.findWordAt(this.currentSelection.anchor)
+				let currText = cm.getRange(wordRange.from(), wordRange.to())
+				cm.replaceRange(beginning + currText + ending, wordRange.from(), wordRange.to())
+			} else {
+				let currText = cm.getRange(this.currentSelection.from(), this.currentSelection.to())
+				cm.replaceRange(beginning + currText + ending, this.currentSelection.from(), this.currentSelection.to())
+			}
+		}
+
+		vimObject.defineEx("surround", "", surroundFunc);
+
+		vimObject.defineEx("pasteinto", "", (cm: CodeMirror.Editor, params: any) => {
+			// Using the register for when this.yankToSystemClipboard == false
+			surroundFunc(cm, { args: ["[", "](" + vimObject.Vim.getRegisterController().getRegister('yank').keyBuffer + ")"] })
+		})
+
+		let cmEditor = this.getEditor(this.getActiveView());
+		// Handle the surround dialog input
+		var surroundDialogCallback = (value: string) => {
+			if ((/^\[+$/).test(value)) { // check for 1-inf [ and match them with ]
+				surroundFunc(cmEditor, { args: [value, "]".repeat(value.length)] })
+			} else if ((/^\(+$/).test(value)) { // check for 1-inf ( and match them with )
+				surroundFunc(cmEditor, { args: [value, ")".repeat(value.length)] })
+			} else if ((/^\{+$/).test(value)) { // check for 1-inf { and match them with }
+				surroundFunc(cmEditor, { args: [value, "}".repeat(value.length)] })
+			} else { // Else, just put it before and after.
+				surroundFunc(cmEditor, { args: [value, value] })
+			}
+		}
+
+		vimObject.defineOperator("surroundOperator", (cm: any, args: any, ranges: any) => {
+			let p = "<span>Surround with: <input type='text'></span>"
+			cm.openDialog(p, surroundDialogCallback, { bottom: true, selectValueOnOpen: false })
+		})
+
+
+		vimObject.mapCommand("<A-y>s", "operator", "surroundOperator")
+
 	}
 
 	captureYankBuffer() {
@@ -354,6 +319,75 @@ export default class VimrcPlugin extends Plugin {
 					this.lastSystemClipboard = value;
 				}
 			})
+		}
+	}
+
+	prepareChordDisplay() {
+		if (this.settings.displayChord) {
+			// Add status bar item
+			this.vimChordStatusBar = this.addStatusBarItem();
+
+			// Move vimChordStatusBar to the leftmost position and center it.
+			let parent = this.vimChordStatusBar.parentElement;
+			this.vimChordStatusBar.parentElement.insertBefore(this.vimChordStatusBar, parent.firstChild);
+			this.vimChordStatusBar.style.marginRight = "auto";
+
+			let cmEditor = this.getEditor(this.getActiveView());
+			// See https://codemirror.net/doc/manual.html#vimapi_events for events.
+			CodeMirror.on(cmEditor, "vim-keypress", async (vimKey: any) => {
+				if (vimKey != "<Esc>") { // TODO figure out what to actually look for to exit commands.
+					this.currentKeyChord.push(vimKey);
+					if (this.customVimKeybinds[this.currentKeyChord.join("")] != undefined) { // Custom key chord exists.
+						this.currentKeyChord = [];
+					}
+				} else {
+					this.currentKeyChord = [];
+				}
+
+				// Build keychord text
+				let tempS = "";
+				for (const s of this.currentKeyChord) {
+					tempS += " " + s;
+				}
+				if (tempS != "") {
+					tempS += "-";
+				}
+				this.vimChordStatusBar.setText(tempS);
+			});
+			CodeMirror.on(cmEditor, "vim-command-done", async (reason: any) => { // Reset display
+				this.vimChordStatusBar.setText("");
+				this.currentKeyChord = [];
+			});
+		}
+	}
+
+	prepareVimModeDisplay() {
+		if (this.settings.displayVimMode) {
+			this.vimStatusBar = this.addStatusBarItem() // Add status bar item
+			this.vimStatusBar.setText(vimStatus.normal) // Init the vimStatusBar with normal mode
+
+			let cmEditor = this.getEditor(this.getActiveView());
+			// See https://codemirror.net/doc/manual.html#vimapi_events for events.
+			CodeMirror.on(cmEditor, "vim-mode-change", async (modeObj: any) => {
+				switch (modeObj.mode) {
+					case "insert":
+						this.currentVimStatus = vimStatus.insert;
+						break;
+					case "normal":
+						this.currentVimStatus = vimStatus.normal;
+						break;
+					case "visual":
+						this.currentVimStatus = vimStatus.visual;
+						break;
+					case "replace":
+						this.currentVimStatus = vimStatus.replace;
+						break;
+					default:
+						break;
+				}
+
+				this.vimStatusBar.setText(this.currentVimStatus);
+			});
 		}
 	}
 }

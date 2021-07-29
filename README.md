@@ -170,6 +170,9 @@ When you enter insert mode, you will type in your actual current system layout/l
 
 ## Changelog
 
+### 0.4.1
+- Small fix in `surround`.
+
 ### 0.4.0
 - `surround` and `pasteinto` commands (thanks @Andr3wD!)
 - Vim chord display (thanks @Andr3wD!)

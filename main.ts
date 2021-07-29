@@ -132,7 +132,7 @@ export default class VimrcPlugin extends Plugin {
 
 				// Record the position of selections
 				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
-					this.currentSelection = cmEditor.listSelections()[0]
+					this.currentSelection = cm.listSelections()[0]
 				})
 
 				vimCommands.split("\n").forEach(

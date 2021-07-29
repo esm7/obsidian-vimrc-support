@@ -1,18 +1,22 @@
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
-import { App, MarkdownView, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+import { Notice, App, MarkdownView, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
 
 declare const CodeMirror: any;
 
 interface Settings {
 	vimrcFileName: string,
 	displayChord: boolean,
-	displayVimMode: boolean
+	displayVimMode: boolean,
+	fixedNormalModeLayout: boolean,
+	capturedKeyboardMap: Record<string, string>
 }
 
 const DEFAULT_SETTINGS: Settings = {
 	vimrcFileName: ".obsidian.vimrc",
 	displayChord: false,
-	displayVimMode: false
+	displayVimMode: false,
+	fixedNormalModeLayout: false,
+	capturedKeyboardMap: {}
 }
 
 const enum vimStatus {
@@ -45,6 +49,26 @@ export default class VimrcPlugin extends Plugin {
 	private currentVimStatus: vimStatus = vimStatus.normal;
 	private customVimKeybinds: { [name: string]: boolean } = {};
 	private currentSelection: CodeMirror.Range = null;
+	private isInsertMode: boolean = false;
+
+	async captureKeyboardLayout() {
+		// This is experimental API and it might break at some point:
+		// https://developer.mozilla.org/en-US/docs/Web/API/KeyboardLayoutMap
+		let keyMap: Record<string, string> = {};
+		let layout = await (navigator as any).keyboard.getLayoutMap();
+		let doneIterating = new Promise((resolve, reject) => {
+			let counted = 0;
+			layout.forEach((value: any, index: any) => {
+				keyMap[index] = value;
+				counted += 1;
+				if (counted === layout.size)
+					resolve();
+			});
+		});
+		await doneIterating;
+		new Notice('Keyboard layout captured');
+		return keyMap;
+	}
 
 	async onload() {
 		console.log('loading Vimrc plugin');
@@ -59,11 +83,6 @@ export default class VimrcPlugin extends Plugin {
 				catch(error => { console.log('Error loading vimrc file', VIMRC_FILE_NAME, 'from the vault root', error) });
 		}));
 
-		// window.onkeydown = (ev: KeyboardEvent) => {
-		// 	console.log('key = ', ev.key, 'code = ', ev.code);
-		// 	ev.stopPropagation();
-		// 	return false;
-		// };
 		this.registerDomEvent(document, 'click', () => {
 			this.captureYankBuffer();
 		});
@@ -105,6 +124,11 @@ export default class VimrcPlugin extends Plugin {
 				this.defineSendKeys(CodeMirror.Vim);
 				this.defineObCommand(CodeMirror.Vim);
 				this.defineSurround(CodeMirror.Vim);
+				this.defineFixedLayout();
+
+				CodeMirror.on(cmEditor, "vim-mode-change", (modeObj: any) => {
+					this.isInsertMode = modeObj.mode === 'insert';
+				});
 
 				// Record the position of selections
 				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
@@ -390,6 +414,21 @@ export default class VimrcPlugin extends Plugin {
 			});
 		}
 	}
+
+	defineFixedLayout() {
+		let cmEditor = this.getEditor(this.getActiveView());
+		cmEditor.on('keydown', (instance: CodeMirror.Editor, ev: KeyboardEvent) => {
+			if (this.settings.fixedNormalModeLayout) {
+				const keyMap = this.settings.capturedKeyboardMap;
+				if (!this.isInsertMode && !ev.shiftKey &&
+						ev.code in keyMap && ev.key != keyMap[ev.code]) {
+					CodeMirror.Vim.handleKey(instance, keyMap[ev.code], 'mapping');
+					ev.preventDefault();
+					return false;
+				}
+			}
+		});
+	}
 }
 
 class SettingsTab extends PluginSettingTab {
@@ -412,10 +451,9 @@ class SettingsTab extends PluginSettingTab {
 			.setDesc('Relative to vault directory (requires restart)')
 			.addText((text) => {
 				text.setPlaceholder(DEFAULT_SETTINGS.vimrcFileName);
-				if (this.plugin.settings.vimrcFileName !== DEFAULT_SETTINGS.vimrcFileName)
-					text.setValue(this.plugin.settings.vimrcFileName)
+				text.setValue(this.plugin.settings.vimrcFileName || DEFAULT_SETTINGS.vimrcFileName);
 				text.onChange(value => {
-					this.plugin.settings.vimrcFileName = value || DEFAULT_SETTINGS.vimrcFileName;
+					this.plugin.settings.vimrcFileName = value;
 					this.plugin.saveSettings();
 				})
 			});
@@ -424,10 +462,9 @@ class SettingsTab extends PluginSettingTab {
 			.setName('Vim chord display')
 			.setDesc('Displays the current chord until completion. Ex: "<Space> f-" (requires restart)')
 			.addToggle((toggle) => {
-				if (this.plugin.settings.displayChord !== DEFAULT_SETTINGS.displayChord)
-					toggle.setValue(this.plugin.settings.displayChord)
+				toggle.setValue(this.plugin.settings.displayChord || DEFAULT_SETTINGS.displayChord);
 				toggle.onChange(value => {
-					this.plugin.settings.displayChord = value || DEFAULT_SETTINGS.displayChord;
+					this.plugin.settings.displayChord = value;
 					this.plugin.saveSettings();
 				})
 			});
@@ -436,12 +473,31 @@ class SettingsTab extends PluginSettingTab {
 			.setName('Vim mode display')
 			.setDesc('Displays the current vim mode (requires restart)')
 			.addToggle((toggle) => {
-				if (this.plugin.settings.displayVimMode !== DEFAULT_SETTINGS.displayVimMode)
-					toggle.setValue(this.plugin.settings.displayVimMode)
+				toggle.setValue(this.plugin.settings.displayVimMode || DEFAULT_SETTINGS.displayVimMode);
 				toggle.onChange(value => {
-					this.plugin.settings.displayVimMode = value || DEFAULT_SETTINGS.displayVimMode;
+					this.plugin.settings.displayVimMode = value;
 					this.plugin.saveSettings();
 				})
 			});
+
+		new Setting(containerEl)
+			.setName('Use a fixed keyboard layout for Normal mode')
+			.setDesc('Define a keyboard layout to always use when in Normal mode, regardless of the input language (experimental).')
+			.addButton(async (button) => {
+				button.setButtonText('Capture current layout');
+				button.onClick(async () => {
+					this.plugin.settings.capturedKeyboardMap = await this.plugin.captureKeyboardLayout();
+					this.plugin.saveSettings();
+				});
+			})
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.fixedNormalModeLayout || DEFAULT_SETTINGS.fixedNormalModeLayout);
+				toggle.onChange(async value => {
+					this.plugin.settings.fixedNormalModeLayout = value;
+					if (value && Object.keys(this.plugin.settings.capturedKeyboardMap).length === 0)
+						this.plugin.settings.capturedKeyboardMap = await this.plugin.captureKeyboardLayout();
+					this.plugin.saveSettings();
+				});
+			})
 	}
 }

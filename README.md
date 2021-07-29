@@ -154,13 +154,28 @@ Note how `exmap` lists command names without colons and in `nmap` the colon is r
 But first `<Space>` must be unbound with `unmap <Space>`.
 Afterwards `<Space>` can be mapped normally as any other key.
 
+## Fixed Keyboard Layout in Normal Mode
+
+In many languages and keyboard layouts it becomes problematic or plain impossible to use Vim keys.
+The Vim keys are located in different positions on some keyboard layouts, which could be confusing when switching
+layouts, and on some layouts (e.g. non-Western languages) the keys for Vim movements just don't exist.
+To be able to use Vim mode with those layouts & languages, you can turn on the "fixed keyboard layout" feature in the
+plugin settings.
+
+When turned on for the first time, or when you click "capture current layout", your current keyboard layout is saved,
+and that will be the layout that is used when you are in Vim normal or visual mode.
+When you enter insert mode, you will type in your actual current system layout/language.
+
+**This feature is experimental and may have unintended side-effects relating to Obsidian or editor shortcuts.**
+
 ## Changelog
 
-### Not released yet
+### 0.4.0
 - `surround` and `pasteinto` commands (thanks @Andr3wD!)
 - Vim chord display (thanks @Andr3wD!)
 - Vim mode display (thanks @Andr3wD!)
 - Fixed [fold and unfold bug](https://github.com/esm7/obsidian-vimrc-support/issues/35).
+- The plugin now supports maintaining a fixed keyboard layout when in normal mode, if configured to do so.
 
 ### 0.3.1
 

@@ -107,11 +107,11 @@ export default class VimrcPlugin extends Plugin {
 		console.log('unloading Vimrc plugin (but Vim commands that were already loaded will still work)');
 	}
 
-	private getActiveView() : MarkdownView {
+	private getActiveView(): MarkdownView {
 		return this.app.workspace.getActiveViewOfType(MarkdownView);
 	}
 
-	private getEditor(view: MarkdownView) : CodeMirror.Editor {
+	private getEditor(view: MarkdownView): CodeMirror.Editor {
 		return view.sourceMode?.cmEditor;
 	}
 
@@ -133,58 +133,6 @@ export default class VimrcPlugin extends Plugin {
 				// Record the position of selections
 				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
 					this.currentSelection = cm.listSelections()[0]
-				})
-
-				// Function to surround selected text or highlighted word.
-				var surroundFunc = (cm: CodeMirror.Editor, params: any) => {
-					if (!params?.args?.length || params.args.length != 2) {
-						throw new Error("surround requires exactly 2 parameters: prefix and postfix text.")
-					}
-					let beginning = params.args[0] // Get the beginning surround text
-					let ending = params.args[1] // Get the ending surround text
-					if (this.currentSelection.anchor == this.currentSelection.head) {
-						// No range of selected text, so select word.
-						let wordRange = cmEditor.findWordAt(this.currentSelection.anchor)
-						let currText = cmEditor.getRange(wordRange.from(), wordRange.to())
-						cmEditor.replaceRange(beginning + currText + ending, wordRange.from(), wordRange.to())
-					} else {
-						let currText = cmEditor.getRange(this.currentSelection.from(), this.currentSelection.to())
-						cmEditor.replaceRange(beginning + currText + ending, this.currentSelection.from(), this.currentSelection.to())
-					}
-				}
-
-				CodeMirror.Vim.defineEx("surround", "", surroundFunc);
-
-				CodeMirror.Vim.defineEx("pasteinto", "", (cm: CodeMirror.Editor, params: any) => {
-					// Using the register for when this.yankToSystemClipboard == false
-					surroundFunc(cm, { args: ["[", "](" + CodeMirror.Vim.getRegisterController().getRegister('yank').keyBuffer + ")"] })
-				})
-
-				// Handle the surround dialog input
-				var surroundDialogCallback = (value: string) => {
-					if ((/^\[+$/).test(value)) { // check for 1-inf [ and match them with ]
-						surroundFunc(cmEditor, { args: [value, "]".repeat(value.length)] })
-					} else if ((/^\(+$/).test(value)) { // check for 1-inf ( and match them with )
-						surroundFunc(cmEditor, { args: [value, ")".repeat(value.length)] })
-					} else if ((/^\{+$/).test(value)) { // check for 1-inf { and match them with }
-						surroundFunc(cmEditor, { args: [value, "}".repeat(value.length)] })
-					} else { // Else, just put it before and after.
-						surroundFunc(cmEditor, { args: [value, value] })
-					}
-				}
-
-				CodeMirror.Vim.defineOperator("surroundOperator", (cm: any, args: any, ranges: any) => {
-					let p = "<span>Surround with: <input type='text'></span>"
-					cm.openDialog(p, surroundDialogCallback, { bottom: true, selectValueOnOpen: false })
-				})
-
-
-				CodeMirror.Vim.mapCommand("<A-y>s", "operator", "surroundOperator")
-				// CodeMirror.Vim.mapCommand("<A-d>s", "operator", "surroundOperator")
-
-				// Record the position of selections
-				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
-					this.currentSelection = cm.listSelections()[cm.listSelections().length-1] // Get 'last' selection of all selections.
 				})
 
 				vimCommands.split("\n").forEach(
@@ -261,7 +209,7 @@ export default class VimrcPlugin extends Plugin {
 			});
 		});
 	}
-	
+
 	defineSendKeys(vimObject: any) {
 		vimObject.defineEx('sendkeys', '', async (cm: any, params: any) => {
 			if (!params?.args?.length) {
@@ -473,7 +421,7 @@ export default class VimrcPlugin extends Plugin {
 			if (this.settings.fixedNormalModeLayout) {
 				const keyMap = this.settings.capturedKeyboardMap;
 				if (!this.isInsertMode && !ev.shiftKey &&
-						ev.code in keyMap && ev.key != keyMap[ev.code]) {
+					ev.code in keyMap && ev.key != keyMap[ev.code]) {
 					CodeMirror.Vim.handleKey(instance, keyMap[ev.code], 'mapping');
 					ev.preventDefault();
 					return false;

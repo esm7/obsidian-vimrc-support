@@ -310,7 +310,7 @@ export default class VimrcPlugin extends Plugin {
 
 		vimObject.defineEx("pasteinto", "", (cm: CodeMirror.Editor, params: any) => {
 			// Using the register for when this.yankToSystemClipboard == false
-			surroundFunc(cm, { args: ["[", "](" + vimObject.Vim.getRegisterController().getRegister('yank').keyBuffer + ")"] })
+			surroundFunc(cm, { args: ["[", "](" + vimObject.getRegisterController().getRegister('yank').keyBuffer + ")"] })
 		})
 
 		let cmEditor = this.getEditor(this.getActiveView());

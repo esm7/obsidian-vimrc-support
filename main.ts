@@ -48,7 +48,7 @@ export default class VimrcPlugin extends Plugin {
 	private vimStatusBar: HTMLElement = null;
 	private currentVimStatus: vimStatus = vimStatus.normal;
 	private customVimKeybinds: { [name: string]: boolean } = {};
-	private currentSelection: CodeMirror.Range = null;
+	private currentSelection: [CodeMirror.Range] = null;
 	private isInsertMode: boolean = false;
 
 	async captureKeyboardLayout() {
@@ -107,11 +107,11 @@ export default class VimrcPlugin extends Plugin {
 		console.log('unloading Vimrc plugin (but Vim commands that were already loaded will still work)');
 	}
 
-	private getActiveView() : MarkdownView {
+	private getActiveView(): MarkdownView {
 		return this.app.workspace.getActiveViewOfType(MarkdownView);
 	}
 
-	private getEditor(view: MarkdownView) : CodeMirror.Editor {
+	private getEditor(view: MarkdownView): CodeMirror.Editor {
 		return view.sourceMode?.cmEditor;
 	}
 
@@ -132,7 +132,7 @@ export default class VimrcPlugin extends Plugin {
 
 				// Record the position of selections
 				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
-					this.currentSelection = cm.listSelections()[0]
+					this.currentSelection = cm.listSelections()
 				})
 
 				vimCommands.split("\n").forEach(
@@ -209,7 +209,7 @@ export default class VimrcPlugin extends Plugin {
 			});
 		});
 	}
-	
+
 	defineSendKeys(vimObject: any) {
 		vimObject.defineEx('sendkeys', '', async (cm: any, params: any) => {
 			if (!params?.args?.length) {
@@ -282,14 +282,27 @@ export default class VimrcPlugin extends Plugin {
 			}
 			let beginning = params.args[0] // Get the beginning surround text
 			let ending = params.args[1] // Get the ending surround text
-			if (this.currentSelection.anchor == this.currentSelection.head) {
+			let currentSelection: CodeMirror.Range = this.currentSelection[0]
+			if (this.currentSelection.length > 1) {
+				console.log("WARNING: Multiple selections in surround. Attempt to select matching cursor. (obsidian-vimrc-support)")
+				for (let i = 0; i < this.currentSelection.length; i++) {
+					const selection = this.currentSelection[i]
+					const cursorPos = cm.getCursor()
+					if (selection.head.line == cursorPos.line && selection.head.ch == cursorPos.ch) {
+						console.log("RESOLVED: Selection matching cursor found. (obsidian-vimrc-support)")
+						currentSelection = selection
+						break
+					}
+				}
+			}
+			if (currentSelection.anchor == currentSelection.head) {
 				// No range of selected text, so select word.
-				let wordRange = cm.findWordAt(this.currentSelection.anchor)
+				let wordRange = cm.findWordAt(currentSelection.anchor)
 				let currText = cm.getRange(wordRange.from(), wordRange.to())
 				cm.replaceRange(beginning + currText + ending, wordRange.from(), wordRange.to())
 			} else {
-				let currText = cm.getRange(this.currentSelection.from(), this.currentSelection.to())
-				cm.replaceRange(beginning + currText + ending, this.currentSelection.from(), this.currentSelection.to())
+				let currText = cm.getRange(currentSelection.from(), currentSelection.to())
+				cm.replaceRange(beginning + currText + ending, currentSelection.from(), currentSelection.to())
 			}
 		}
 
@@ -297,7 +310,7 @@ export default class VimrcPlugin extends Plugin {
 
 		vimObject.defineEx("pasteinto", "", (cm: CodeMirror.Editor, params: any) => {
 			// Using the register for when this.yankToSystemClipboard == false
-			surroundFunc(cm, { args: ["[", "](" + vimObject.Vim.getRegisterController().getRegister('yank').keyBuffer + ")"] })
+			surroundFunc(cm, { args: ["[", "](" + vimObject.getRegisterController().getRegister('yank').keyBuffer + ")"] })
 		})
 
 		let cmEditor = this.getEditor(this.getActiveView());
@@ -421,7 +434,7 @@ export default class VimrcPlugin extends Plugin {
 			if (this.settings.fixedNormalModeLayout) {
 				const keyMap = this.settings.capturedKeyboardMap;
 				if (!this.isInsertMode && !ev.shiftKey &&
-						ev.code in keyMap && ev.key != keyMap[ev.code]) {
+					ev.code in keyMap && ev.key != keyMap[ev.code]) {
 					CodeMirror.Vim.handleKey(instance, keyMap[ev.code], 'mapping');
 					ev.preventDefault();
 					return false;

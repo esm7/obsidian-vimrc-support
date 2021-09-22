@@ -96,6 +96,9 @@ Some useful examples:
 
 And many more.
 
+**WARNING:** this is not a formal API that Obsidian provides and is done in a rather hacky manner.
+It's definitely possible that some future version of Obsidian will break this functionality.
+
 ### Mapping Obsidian Commands Within Vim
 
 Next thing you probably wanna ask is "how do I map the great Obsidian commands to Vim commands?"
@@ -113,9 +116,6 @@ nmap <C-o> :back
 ```
 
 Note how `exmap` lists command names without colons and in `nmap` the colon is required.
-
-**WARNING:** this is not a formal API that Obsidian provides and is done in a rather hacky manner.
-It's definitely possible that some future version of Obsidian will break this functionality.
 
 ## Surround Text with `surround`
 

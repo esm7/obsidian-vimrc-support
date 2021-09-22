@@ -96,6 +96,24 @@ Some useful examples:
 
 And many more.
 
+### Mapping Obsidian Commands Within Vim
+
+Next thing you probably wanna ask is "how do I map the great Obsidian commands to Vim commands?"
+
+The trivial answer should have been something along the line of `:nmap <C-o> :obcommand app:go-back`, but this **does not work** because of an annoying CodeMirror bug.
+Turns out that the various mapping commands of CodeMirror pass only the first argument, so when you execute your mapping if defined as above, `:obcommand` would execute with no arguments.
+
+Here comes a custom command to the rescue, `exmap`, which you can use to "alias" Ex commands for longer Ex commands: `:exmap back obcommand app:go-back`.
+You now have a simple (0 argument) Ex command named `back` that goes back in Obsidian, and *that* is something you can map.
+
+To summarize, here's how you map `C-o` to Back:
+```
+exmap back obcommand app:go-back
+nmap <C-o> :back
+```
+
+Note how `exmap` lists command names without colons and in `nmap` the colon is required.
+
 **WARNING:** this is not a formal API that Obsidian provides and is done in a rather hacky manner.
 It's definitely possible that some future version of Obsidian will break this functionality.
 
@@ -129,24 +147,6 @@ Here's my hyperlink config as an example:
 " Maps pasteinto to Alt-p
 map <A-p> :pasteinto
 ```
-
-### Mapping Obsidian Commands Within Vim
-
-Next thing you probably wanna ask is "how do I map the great Obsidian commands to Vim commands?"
-
-The trivial answer should have been something along the line of `:nmap <C-o> :obcommand app:go-back`, but this **does not work** because of an annoying CodeMirror bug.
-Turns out that the various mapping commands of CodeMirror pass only the first argument, so when you execute your mapping if defined as above, `:obcommand` would execute with no arguments.
-
-Here comes a custom command to the rescue, `exmap`, which you can use to "alias" Ex commands for longer Ex commands: `:exmap back obcommand app:go-back`.
-You now have a simple (0 argument) Ex command named `back` that goes back in Obsidian, and *that* is something you can map.
-
-To summarize, here's how you map `C-o` to Back:
-```
-exmap back obcommand app:go-back
-nmap <C-o> :back
-```
-
-Note how `exmap` lists command names without colons and in `nmap` the colon is required.
 
 ## Some Help with Binding Space Chords (Doom and Spacemacs fans)
 

@@ -74,7 +74,6 @@ Having said that, adding features here in this plugin is often very easy thanks 
 
 Things I'd love to add:
 - Implement some standard `vim-markdown` motions for Obsidian, e.g. `[[`, or implement for CodeMirror the 1-2 missing Ex commands required to define these keymaps in the Vimrc.
-- Relative line numbers.
 
 ## Change Vimrc File Location/Name
 
@@ -168,7 +167,15 @@ When you enter insert mode, you will type in your actual current system layout/l
 
 **This feature is experimental and may have unintended side-effects relating to Obsidian or editor shortcuts.**
 
+## Relative Line Numbers
+
+Relative line numbers work very nicely with [this](https://github.com/nadavspi/obsidian-relative-line-numbers) Obsidian plugin (thank you @piotryordanov for bringing it to my attention!)
+
 ## Changelog
+
+### 0.4.2
+- Attempted fix to https://github.com/esm7/obsidian-vimrc-support/issues/42 (thanks @Andr3wD!)
+- Fix to "fixed keyboard layout in Normal mode" which was often not really working.
 
 ### 0.4.1
 - Small fix in `surround`.

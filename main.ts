@@ -83,6 +83,10 @@ export default class VimrcPlugin extends Plugin {
 				catch(error => { console.log('Error loading vimrc file', VIMRC_FILE_NAME, 'from the vault root', error) });
 		}));
 
+		this.app.workspace.on('codemirror', (cm: CodeMirror.Editor) => {
+			this.defineFixedLayout(cm);
+		});
+
 		this.registerDomEvent(document, 'click', () => {
 			this.captureYankBuffer();
 		});
@@ -124,7 +128,6 @@ export default class VimrcPlugin extends Plugin {
 				this.defineSendKeys(CodeMirror.Vim);
 				this.defineObCommand(CodeMirror.Vim);
 				this.defineSurround(CodeMirror.Vim);
-				this.defineFixedLayout();
 
 				CodeMirror.on(cmEditor, "vim-mode-change", (modeObj: any) => {
 					this.isInsertMode = modeObj.mode === 'insert';
@@ -428,9 +431,8 @@ export default class VimrcPlugin extends Plugin {
 		}
 	}
 
-	defineFixedLayout() {
-		let cmEditor = this.getEditor(this.getActiveView());
-		cmEditor.on('keydown', (instance: CodeMirror.Editor, ev: KeyboardEvent) => {
+	defineFixedLayout(cm: CodeMirror.Editor) {
+		cm.on('keydown', (instance: CodeMirror.Editor, ev: KeyboardEvent) => {
 			if (this.settings.fixedNormalModeLayout) {
 				const keyMap = this.settings.capturedKeyboardMap;
 				if (!this.isInsertMode && !ev.shiftKey &&

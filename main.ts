@@ -84,6 +84,9 @@ export default class VimrcPlugin extends Plugin {
 		}));
 
 		this.app.workspace.on('codemirror', (cm: CodeMirror.Editor) => {
+			cm.on('vim-mode-change', (modeObj: any) => {
+				this.logVimModeChange(modeObj);
+			});
 			this.defineFixedLayout(cm);
 		});
 
@@ -107,6 +110,27 @@ export default class VimrcPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
+	logVimModeChange(modeObj: any) {
+		this.isInsertMode = modeObj.mode === 'insert';
+		switch (modeObj.mode) {
+			case "insert":
+				this.currentVimStatus = vimStatus.insert;
+				break;
+			case "normal":
+				this.currentVimStatus = vimStatus.normal;
+				break;
+			case "visual":
+				this.currentVimStatus = vimStatus.visual;
+				break;
+			case "replace":
+				this.currentVimStatus = vimStatus.replace;
+				break;
+			default:
+				break;
+		}
+		this.vimStatusBar.setText(this.currentVimStatus);
+	}
+
 	onunload() {
 		console.log('unloading Vimrc plugin (but Vim commands that were already loaded will still work)');
 	}
@@ -128,10 +152,6 @@ export default class VimrcPlugin extends Plugin {
 				this.defineSendKeys(CodeMirror.Vim);
 				this.defineObCommand(CodeMirror.Vim);
 				this.defineSurround(CodeMirror.Vim);
-
-				CodeMirror.on(cmEditor, "vim-mode-change", (modeObj: any) => {
-					this.isInsertMode = modeObj.mode === 'insert';
-				});
 
 				// Record the position of selections
 				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
@@ -405,29 +425,6 @@ export default class VimrcPlugin extends Plugin {
 		if (this.settings.displayVimMode) {
 			this.vimStatusBar = this.addStatusBarItem() // Add status bar item
 			this.vimStatusBar.setText(vimStatus.normal) // Init the vimStatusBar with normal mode
-
-			let cmEditor = this.getEditor(this.getActiveView());
-			// See https://codemirror.net/doc/manual.html#vimapi_events for events.
-			CodeMirror.on(cmEditor, "vim-mode-change", async (modeObj: any) => {
-				switch (modeObj.mode) {
-					case "insert":
-						this.currentVimStatus = vimStatus.insert;
-						break;
-					case "normal":
-						this.currentVimStatus = vimStatus.normal;
-						break;
-					case "visual":
-						this.currentVimStatus = vimStatus.visual;
-						break;
-					case "replace":
-						this.currentVimStatus = vimStatus.replace;
-						break;
-					default:
-						break;
-				}
-
-				this.vimStatusBar.setText(this.currentVimStatus);
-			});
 		}
 	}
 

@@ -300,11 +300,17 @@ export default class VimrcPlugin extends Plugin {
 	defineSurround(vimObject: any) {
 		// Function to surround selected text or highlighted word.
 		var surroundFunc = (cm: CodeMirror.Editor, params: any) => {
-			if (!params?.args?.length || params.args.length != 2) {
+			if (!params?.args?.length) {
 				throw new Error("surround requires exactly 2 parameters: prefix and postfix text.")
 			}
-			let beginning = params.args[0] // Get the beginning surround text
-			let ending = params.args[1] // Get the ending surround text
+			let newArgs = params.args.join(" ").match(/(\\.|[^\s\\\\]+)+/g)
+			if (newArgs.length != 2) {
+				throw new Error("surround requires exactly 2 parameters: prefix and postfix text.")
+			}
+			
+			let beginning = newArgs[0].replace("\\\\", "\\").replace("\\ ", " ") // Get the beginning surround text
+			let ending = newArgs[1].replace("\\\\", "\\").replace("\\ ", " ") // Get the ending surround text
+
 			let currentSelection: CodeMirror.Range = this.currentSelection[0]
 			if (this.currentSelection.length > 1) {
 				console.log("WARNING: Multiple selections in surround. Attempt to select matching cursor. (obsidian-vimrc-support)")

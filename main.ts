@@ -85,7 +85,8 @@ export default class VimrcPlugin extends Plugin {
 
 		this.app.workspace.on('codemirror', (cm: CodeMirror.Editor) => {
 			cm.on('vim-mode-change', (modeObj: any) => {
-				this.logVimModeChange(modeObj);
+				if (modeObj)
+					this.logVimModeChange(modeObj);
 			});
 			this.defineFixedLayout(cm);
 		});

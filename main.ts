@@ -125,7 +125,6 @@ export default class VimrcPlugin extends Plugin {
 			default:
 				break;
 		}
-		this.vimStatusBar.setText(this.currentVimStatus); // TODO save status by leaf instead and add update on-leaf-change.
 	}
 
 	onunload() {
@@ -300,7 +299,7 @@ export default class VimrcPlugin extends Plugin {
 			if (newArgs.length != 2) {
 				throw new Error("surround requires exactly 2 parameters: prefix and postfix text.")
 			}
-			
+
 			let beginning = newArgs[0].replace("\\\\", "\\").replace("\\ ", " ") // Get the beginning surround text
 			let ending = newArgs[1].replace("\\\\", "\\").replace("\\ ", " ") // Get the ending surround text
 
@@ -436,15 +435,17 @@ export default class VimrcPlugin extends Plugin {
 
 	prepareVimModeDisplay() {
 		if (this.settings.displayVimMode) {
+			this.vimStatusBar = this.addStatusBarItem() // Add status bar item
+			this.vimStatusBar.setText(vimStatus.normal) // Init the vimStatusBar with normal mode
 			// Register vim-mode-change event for all current and future CodeMirror.Editor instances.
 			this.registerCodeMirror((cm: CodeMirror.Editor) => {
 				CodeMirror.on(cm, 'vim-mode-change', (modeObj: any) => {
-					if (modeObj)
+					if (modeObj) {
 						this.logVimModeChange(modeObj);
+						this.vimStatusBar.setText(this.currentVimStatus); // TODO save status by leaf instead and add update on-leaf-change.
+					}
 				});
 			});
-			this.vimStatusBar = this.addStatusBarItem() // Add status bar item
-			this.vimStatusBar.setText(vimStatus.normal) // Init the vimStatusBar with normal mode
 		}
 	}
 

@@ -173,6 +173,9 @@ Relative line numbers work very nicely with [this](https://github.com/nadavspi/o
 
 ## Changelog
 
+### 0.4.5
+Apparently the fix in version 0.4.4 was not good enough. Hopefully we're done with this issue now.
+
 ### 0.4.4
 - Fix to an error constantly displayed in the console.
 

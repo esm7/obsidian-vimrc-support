@@ -129,7 +129,8 @@ export default class VimrcPlugin extends Plugin {
 			default:
 				break;
 		}
-		this.vimStatusBar.setText(this.currentVimStatus);
+		if (this.settings.displayVimMode)
+			this.vimStatusBar.setText(this.currentVimStatus);
 	}
 
 	onunload() {

@@ -84,10 +84,6 @@ export default class VimrcPlugin extends Plugin {
 		}));
 
 		this.app.workspace.on('codemirror', (cm: CodeMirror.Editor) => {
-			cm.on('vim-mode-change', (modeObj: any) => {
-				if (modeObj)
-					this.logVimModeChange(modeObj);
-			});
 			this.defineFixedLayout(cm);
 		});
 
@@ -129,7 +125,7 @@ export default class VimrcPlugin extends Plugin {
 			default:
 				break;
 		}
-		this.vimStatusBar.setText(this.currentVimStatus);
+		this.vimStatusBar.setText(this.currentVimStatus); // TODO save status by leaf instead and add update on-leaf-change.
 	}
 
 	onunload() {
@@ -154,11 +150,6 @@ export default class VimrcPlugin extends Plugin {
 				this.defineObCommand(CodeMirror.Vim);
 				this.defineSurround(CodeMirror.Vim);
 
-				// Record the position of selections
-				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
-					this.currentSelection = cm.listSelections()
-				})
-
 				vimCommands.split("\n").forEach(
 					function (line: string, index: number, arr: [string]) {
 						if (line.trim().length > 0 && line.trim()[0] != '"') {
@@ -172,6 +163,7 @@ export default class VimrcPlugin extends Plugin {
 					}.bind(this) // Faster than an arrow function. https://stackoverflow.com/questions/50375440/binding-vs-arrow-function-for-react-onclick-event
 				)
 
+				this.registerSelectionTracker();
 				this.prepareChordDisplay();
 				this.prepareVimModeDisplay();
 
@@ -367,6 +359,15 @@ export default class VimrcPlugin extends Plugin {
 
 	}
 
+	registerSelectionTracker() {
+		this.registerCodeMirror((cm: CodeMirror.Editor) => {
+			// Record the position of selections
+			CodeMirror.on(cm, "cursorActivity", async (cm: any) => {
+				this.currentSelection = cm.listSelections()
+			})
+		});
+	}
+
 	captureYankBuffer() {
 		if (this.yankToSystemClipboard) {
 			let currentBuffer = CodeMirror.Vim.getRegisterController().getRegister('yank').keyBuffer;
@@ -399,37 +400,49 @@ export default class VimrcPlugin extends Plugin {
 			this.vimChordStatusBar.parentElement.insertBefore(this.vimChordStatusBar, parent.firstChild);
 			this.vimChordStatusBar.style.marginRight = "auto";
 
-			let cmEditor = this.getEditor(this.getActiveView());
-			// See https://codemirror.net/doc/manual.html#vimapi_events for events.
-			CodeMirror.on(cmEditor, "vim-keypress", async (vimKey: any) => {
-				if (vimKey != "<Esc>") { // TODO figure out what to actually look for to exit commands.
-					this.currentKeyChord.push(vimKey);
-					if (this.customVimKeybinds[this.currentKeyChord.join("")] != undefined) { // Custom key chord exists.
+			// Register vim-keypress and vim-command-done event for all current and future CodeMirror.Editor instances.
+			this.registerCodeMirror((cm: CodeMirror.Editor) => {
+				// Record current chord and display.
+				CodeMirror.on(cm, "vim-keypress", async (vimKey: any) => {
+					if (vimKey != "<Esc>") { // TODO figure out what to actually look for to exit commands.
+						this.currentKeyChord.push(vimKey);
+						if (this.customVimKeybinds[this.currentKeyChord.join("")] != undefined) { // Custom key chord exists.
+							this.currentKeyChord = [];
+						}
+					} else {
 						this.currentKeyChord = [];
 					}
-				} else {
-					this.currentKeyChord = [];
-				}
 
-				// Build keychord text
-				let tempS = "";
-				for (const s of this.currentKeyChord) {
-					tempS += " " + s;
-				}
-				if (tempS != "") {
-					tempS += "-";
-				}
-				this.vimChordStatusBar.setText(tempS);
+					// Build keychord text
+					let tempS = "";
+					for (const s of this.currentKeyChord) {
+						tempS += " " + s;
+					}
+					if (tempS != "") {
+						tempS += "-";
+					}
+					this.vimChordStatusBar.setText(tempS);
+				});
+
+				// Reset display on command finished.
+				CodeMirror.on(cm, "vim-command-done", async (reason: any) => {
+					this.vimChordStatusBar.setText("");
+					this.currentKeyChord = [];
+				});
 			});
-			CodeMirror.on(cmEditor, "vim-command-done", async (reason: any) => { // Reset display
-				this.vimChordStatusBar.setText("");
-				this.currentKeyChord = [];
-			});
+
 		}
 	}
 
 	prepareVimModeDisplay() {
 		if (this.settings.displayVimMode) {
+			// Register vim-mode-change event for all current and future CodeMirror.Editor instances.
+			this.registerCodeMirror((cm: CodeMirror.Editor) => {
+				CodeMirror.on(cm, 'vim-mode-change', (modeObj: any) => {
+					if (modeObj)
+						this.logVimModeChange(modeObj);
+				});
+			});
 			this.vimStatusBar = this.addStatusBarItem() // Add status bar item
 			this.vimStatusBar.setText(vimStatus.normal) // Init the vimStatusBar with normal mode
 		}

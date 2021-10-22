@@ -84,6 +84,10 @@ export default class VimrcPlugin extends Plugin {
 		}));
 
 		this.app.workspace.on('codemirror', (cm: CodeMirror.Editor) => {
+			cm.on('vim-mode-change', (modeObj: any) => {
+				if (modeObj)
+					this.logVimModeChange(modeObj);
+			});
 			this.defineFixedLayout(cm);
 		});
 
@@ -125,6 +129,8 @@ export default class VimrcPlugin extends Plugin {
 			default:
 				break;
 		}
+		if (this.settings.displayVimMode) 
+			this.vimStatusBar.setText(this.currentVimStatus); // TODO save status by leaf instead and add update on-leaf-change.
 	}
 
 	onunload() {
@@ -437,15 +443,6 @@ export default class VimrcPlugin extends Plugin {
 		if (this.settings.displayVimMode) {
 			this.vimStatusBar = this.addStatusBarItem() // Add status bar item
 			this.vimStatusBar.setText(vimStatus.normal) // Init the vimStatusBar with normal mode
-			// Register vim-mode-change event for all current and future CodeMirror.Editor instances.
-			this.registerCodeMirror((cm: CodeMirror.Editor) => {
-				CodeMirror.on(cm, 'vim-mode-change', (modeObj: any) => {
-					if (modeObj) {
-						this.logVimModeChange(modeObj);
-						this.vimStatusBar.setText(this.currentVimStatus); // TODO save status by leaf instead and add update on-leaf-change.
-					}
-				});
-			});
 		}
 	}
 

@@ -1,5 +1,5 @@
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
-import { Notice, App, MarkdownView, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+import { Editor, EditorSelection, Notice, App, MarkdownView, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
 
 declare const CodeMirror: any;
 
@@ -40,6 +40,9 @@ function sleep(ms: number) {
 export default class VimrcPlugin extends Plugin {
 	settings: Settings;
 
+	private codeMirrorVimObject: any = null;
+	private editorMode: 'cm5' | 'cm6' = null;
+
 	private lastYankBuffer = new Array<string>(0);
 	private lastSystemClipboard = "";
 	private yankToSystemClipboard: boolean = false;
@@ -48,7 +51,7 @@ export default class VimrcPlugin extends Plugin {
 	private vimStatusBar: HTMLElement = null;
 	private currentVimStatus: vimStatus = vimStatus.normal;
 	private customVimKeybinds: { [name: string]: boolean } = {};
-	private currentSelection: [CodeMirror.Range] = null;
+	private currentSelection: [EditorSelection] = null;
 	private isInsertMode: boolean = false;
 
 	async captureKeyboardLayout() {
@@ -71,8 +74,15 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 	async onload() {
-		console.log('loading Vimrc plugin');
-
+		if ((this.app.vault as any).config?.legacyEditor) {
+			this.codeMirrorVimObject = CodeMirror.Vim;
+			this.editorMode = 'cm5';
+			console.log('Vimrc plugin: using CodeMirror 5 mode');
+		} else {
+			this.codeMirrorVimObject = (window as any).CodeMirrorAdapter?.Vim;
+			this.editorMode = 'cm6';
+			console.log('Vimrc plugin: using CodeMirror 6 mode');
+		}
 		await this.loadSettings();
 		this.addSettingTab(new SettingsTab(this.app, this))
 
@@ -141,24 +151,28 @@ export default class VimrcPlugin extends Plugin {
 		return this.app.workspace.getActiveViewOfType(MarkdownView);
 	}
 
-	private getEditor(view: MarkdownView): CodeMirror.Editor {
-		return view.sourceMode?.cmEditor;
+	private getCodeMirror(view: MarkdownView): CodeMirror.Editor {
+		if (this.editorMode == 'cm6')
+			return (view as any).sourceMode?.cmEditor.cm.cm;
+		else
+			return (view as any).sourceMode?.cmEditor;
 	}
 
 	readVimInit(vimCommands: string) {
 		let view = this.getActiveView();
 		if (view) {
-			var cmEditor = this.getEditor(view);
-			if (cmEditor && !CodeMirror.Vim.loadedVimrc) {
-				this.defineBasicCommands(CodeMirror.Vim);
-				this.defineSendKeys(CodeMirror.Vim);
-				this.defineObCommand(CodeMirror.Vim);
-				this.defineSurround(CodeMirror.Vim);
+			var cmEditor = this.getCodeMirror(view);
+			if (cmEditor && !this.codeMirrorVimObject.loadedVimrc) {
+				this.defineBasicCommands(this.codeMirrorVimObject);
+				this.defineSendKeys(this.codeMirrorVimObject);
+				this.defineObCommand(this.codeMirrorVimObject);
+				this.defineCmCommand(this.codeMirrorVimObject);
+				this.defineSurround(this.codeMirrorVimObject);
 
 				// Record the position of selections
 				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
 					this.currentSelection = cm.listSelections()
-				})
+				});
 
 				vimCommands.split("\n").forEach(
 					function (line: string, index: number, arr: [string]) {
@@ -168,7 +182,7 @@ export default class VimrcPlugin extends Plugin {
 								// Have to do this because "vim-command-done" event doesn't actually work properly, or something.
 								this.customVimKeybinds[split[1]] = true
 							}
-							CodeMirror.Vim.handleEx(cmEditor, line);
+							this.codeMirrorVimObject.handleEx(cmEditor, line);
 						}
 					}.bind(this) // Faster than an arrow function. https://stackoverflow.com/questions/50375440/binding-vs-arrow-function-for-react-onclick-event
 				)
@@ -179,7 +193,7 @@ export default class VimrcPlugin extends Plugin {
 				// Make sure that we load it just once per CodeMirror instance.
 				// This is supposed to work because the Vim state is kept at the keymap level, hopefully
 				// there will not be bugs caused by operations that are kept at the object level instead
-				CodeMirror.Vim.loadedVimrc = true;
+				this.codeMirrorVimObject.loadedVimrc = true;
 			}
 		}
 	}
@@ -206,7 +220,7 @@ export default class VimrcPlugin extends Plugin {
 
 		vimObject.defineEx('iunmap', '', (cm: any, params: any) => {
 			if (params.argString.trim()) {
-				CodeMirror.Vim.unmap(params.argString.trim(), 'insert');
+				this.codeMirrorVimObject.unmap(params.argString.trim(), 'insert');
 			}
 		});
 
@@ -216,7 +230,7 @@ export default class VimrcPlugin extends Plugin {
 			}
 
 			if (params.argString.trim()) {
-				CodeMirror.Vim.noremap.apply(CodeMirror.Vim, params.args);
+				this.codeMirrorVimObject.noremap.apply(this.codeMirrorVimObject, params.args);
 			}
 		});
 
@@ -229,8 +243,8 @@ export default class VimrcPlugin extends Plugin {
 			params.args.shift();
 			let commandContent = params.args.join(' ');
 			// The content of the user's Ex command is just the remaining parameters of the exmap command
-			CodeMirror.Vim.defineEx(commandName, '', (cm: any, params: any) => {
-				CodeMirror.Vim.handleEx(cm, commandContent);
+			this.codeMirrorVimObject.defineEx(commandName, '', (cm: any, params: any) => {
+				this.codeMirrorVimObject.handleEx(cm, commandContent);
 			});
 		});
 	}
@@ -299,68 +313,103 @@ export default class VimrcPlugin extends Plugin {
 		});
 	}
 
+	defineCmCommand(vimObject: any) {
+		vimObject.defineEx('cmcommand', '', async (cm: any, params: any) => {
+			if (!params?.args?.length || params.args.length != 1) {
+				throw new Error(`cmcommand requires exactly 1 parameter`);
+			}
+			if (this.editorMode === 'cm5') {
+				let cmEditor = this.getCodeMirror(this.getActiveView());
+				cmEditor.execCommand(params.args[0]);
+			}
+			else
+				throw new Error('cmcommand currently only works on the legacy CM5 editor');
+		});
+	}
+
 	defineSurround(vimObject: any) {
 		// Function to surround selected text or highlighted word.
-		var surroundFunc = (cm: CodeMirror.Editor, params: any) => {
-			if (!params?.args?.length) {
-				throw new Error("surround requires exactly 2 parameters: prefix and postfix text.")
+		var surroundFunc = (params: string[]) => {
+			if (this.editorMode === 'cm6')
+				throw new Error("surround is not yet supported in the new editor. To be added soon.");
+			var editor = this.getActiveView().editor;
+			if (!params.length) {
+				throw new Error("surround requires exactly 2 parameters: prefix and postfix text.");
 			}
-			let newArgs = params.args.join(" ").match(/(\\.|[^\s\\\\]+)+/g)
+			let newArgs = params.join(" ").match(/(\\.|[^\s\\\\]+)+/g);
 			if (newArgs.length != 2) {
-				throw new Error("surround requires exactly 2 parameters: prefix and postfix text.")
+				throw new Error("surround requires exactly 2 parameters: prefix and postfix text.");
 			}
 			
-			let beginning = newArgs[0].replace("\\\\", "\\").replace("\\ ", " ") // Get the beginning surround text
-			let ending = newArgs[1].replace("\\\\", "\\").replace("\\ ", " ") // Get the ending surround text
+			let beginning = newArgs[0].replace("\\\\", "\\").replace("\\ ", " "); // Get the beginning surround text
+			let ending = newArgs[1].replace("\\\\", "\\").replace("\\ ", " "); // Get the ending surround text
 
-			let currentSelection: CodeMirror.Range = this.currentSelection[0]
-			if (this.currentSelection.length > 1) {
+			let currentSelections = this.currentSelection;
+			var chosenSelection = currentSelections[0];
+			if (this.currentSelection && currentSelections.length > 1) {
 				console.log("WARNING: Multiple selections in surround. Attempt to select matching cursor. (obsidian-vimrc-support)")
-				for (let i = 0; i < this.currentSelection.length; i++) {
-					const selection = this.currentSelection[i]
-					const cursorPos = cm.getCursor()
+				const cursorPos = editor.getCursor();
+				for (const selection of currentSelections) {
 					if (selection.head.line == cursorPos.line && selection.head.ch == cursorPos.ch) {
 						console.log("RESOLVED: Selection matching cursor found. (obsidian-vimrc-support)")
-						currentSelection = selection
-						break
+						chosenSelection = selection;
+						break;
 					}
 				}
 			}
-			if (currentSelection.anchor == currentSelection.head) {
+			if (JSON.stringify(chosenSelection.anchor) === JSON.stringify(chosenSelection.head)) {
 				// No range of selected text, so select word.
-				let wordRange = cm.findWordAt(currentSelection.anchor)
-				let currText = cm.getRange(wordRange.from(), wordRange.to())
-				cm.replaceRange(beginning + currText + ending, wordRange.from(), wordRange.to())
-			} else {
-				let currText = cm.getRange(currentSelection.from(), currentSelection.to())
-				cm.replaceRange(beginning + currText + ending, currentSelection.from(), currentSelection.to())
+				var line = editor.getLine(chosenSelection.anchor.line);
+				if (line.length === 0)
+					throw new Error("can't surround on an empty line");
+				// Go to the beginning of the word
+				let wordStart = chosenSelection.anchor.ch;
+				for ( ; wordStart >= 0 ; wordStart--)
+					if (line[wordStart].match(/\s/))
+						break;
+				wordStart++;
+				let wordEnd = chosenSelection.anchor.ch;
+				for ( ; wordEnd < line.length ; wordEnd++)
+					if (line[wordEnd].match(/\s/))
+						break;
+				var word = line.substring(wordStart, wordEnd);
+				chosenSelection.anchor.ch = wordStart;
+				chosenSelection.head.ch = wordEnd;
+				chosenSelection = {
+					anchor: {line: chosenSelection.anchor.line, ch: wordStart},
+					head: {line: chosenSelection.head.line, ch: wordEnd}
+				};
 			}
+			let currText = editor.getRange(chosenSelection.anchor, chosenSelection.head);
+			editor.replaceRange(beginning + currText + ending, chosenSelection.anchor, chosenSelection.head);
 		}
 
-		vimObject.defineEx("surround", "", surroundFunc);
+		vimObject.defineEx("surround", "", (cm: any, params: any) => { surroundFunc(params.args); });
 
-		vimObject.defineEx("pasteinto", "", (cm: CodeMirror.Editor, params: any) => {
+		vimObject.defineEx("pasteinto", "", (cm: any, params: any) => {
 			// Using the register for when this.yankToSystemClipboard == false
-			surroundFunc(cm, { args: ["[", "](" + vimObject.getRegisterController().getRegister('yank').keyBuffer + ")"] })
+			surroundFunc(
+				['[',
+				 '](' + vimObject.getRegisterController().getRegister('yank').keyBuffer + ")"]);
 		})
 
-		let cmEditor = this.getEditor(this.getActiveView());
+		var editor = this.getActiveView().editor;
 		// Handle the surround dialog input
 		var surroundDialogCallback = (value: string) => {
 			if ((/^\[+$/).test(value)) { // check for 1-inf [ and match them with ]
-				surroundFunc(cmEditor, { args: [value, "]".repeat(value.length)] })
+				surroundFunc([value, "]".repeat(value.length)])
 			} else if ((/^\(+$/).test(value)) { // check for 1-inf ( and match them with )
-				surroundFunc(cmEditor, { args: [value, ")".repeat(value.length)] })
+				surroundFunc([value, ")".repeat(value.length)])
 			} else if ((/^\{+$/).test(value)) { // check for 1-inf { and match them with }
-				surroundFunc(cmEditor, { args: [value, "}".repeat(value.length)] })
+				surroundFunc([value, "}".repeat(value.length)])
 			} else { // Else, just put it before and after.
-				surroundFunc(cmEditor, { args: [value, value] })
+				surroundFunc([value, value])
 			}
 		}
 
-		vimObject.defineOperator("surroundOperator", (cm: any, args: any, ranges: any) => {
+		vimObject.defineOperator("surroundOperator", () => {
 			let p = "<span>Surround with: <input type='text'></span>"
-			cm.openDialog(p, surroundDialogCallback, { bottom: true, selectValueOnOpen: false })
+			CodeMirror.openDialog(p, surroundDialogCallback, { bottom: true, selectValueOnOpen: false })
 		})
 
 
@@ -370,7 +419,7 @@ export default class VimrcPlugin extends Plugin {
 
 	captureYankBuffer() {
 		if (this.yankToSystemClipboard) {
-			let currentBuffer = CodeMirror.Vim.getRegisterController().getRegister('yank').keyBuffer;
+			let currentBuffer = this.codeMirrorVimObject.getRegisterController().getRegister('yank').keyBuffer;
 			if (currentBuffer != this.lastYankBuffer) {
 				if (this.lastYankBuffer.length > 0 && currentBuffer.length > 0 && currentBuffer[0]) {
 					navigator.clipboard.writeText(currentBuffer[0]);
@@ -381,7 +430,7 @@ export default class VimrcPlugin extends Plugin {
 			}
 			let currentClipboard = navigator.clipboard.readText().then((value) => {
 				if (value != this.lastSystemClipboard) {
-					let yankRegister = CodeMirror.Vim.getRegisterController().getRegister('yank')
+					let yankRegister = this.codeMirrorVimObject.getRegisterController().getRegister('yank')
 					yankRegister.setText(value);
 					this.lastYankBuffer = yankRegister.keyBuffer;
 					this.lastSystemClipboard = value;
@@ -400,7 +449,7 @@ export default class VimrcPlugin extends Plugin {
 			this.vimChordStatusBar.parentElement.insertBefore(this.vimChordStatusBar, parent.firstChild);
 			this.vimChordStatusBar.style.marginRight = "auto";
 
-			let cmEditor = this.getEditor(this.getActiveView());
+			let cmEditor = this.getCodeMirror(this.getActiveView());
 			// See https://codemirror.net/doc/manual.html#vimapi_events for events.
 			CodeMirror.on(cmEditor, "vim-keypress", async (vimKey: any) => {
 				if (vimKey != "<Esc>") { // TODO figure out what to actually look for to exit commands.
@@ -442,7 +491,7 @@ export default class VimrcPlugin extends Plugin {
 				const keyMap = this.settings.capturedKeyboardMap;
 				if (!this.isInsertMode && !ev.shiftKey &&
 					ev.code in keyMap && ev.key != keyMap[ev.code]) {
-					CodeMirror.Vim.handleKey(instance, keyMap[ev.code], 'mapping');
+					this.codeMirrorVimObject.handleKey(instance, keyMap[ev.code], 'mapping');
 					ev.preventDefault();
 					return false;
 				}

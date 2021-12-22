@@ -48,6 +48,7 @@ In addition to that:
 - Custom mapping/unmapping commands in addition to the defaults: `noremap` and `iunmap` (PRs are welcome to implement more :) )
 - `exmap [commandName] [command...]`: a command to map Ex commands. This should basically be supported in regular `:map`, but doesn't work with multi-argument commands due to a CodeMirror bug, so this is a workaround.
 - `obcommand` - execute Obsidian commands, see more details below.
+- `cmcommand` - execute arbitrary CodeMirror commands, see details below.
 - `surround` - surround your selected text in visual mode or word in normal mode with text.
 - `pasteinto` - paste your current clipboard into your selected text in visual mode or word in normal mode. Useful for creating hyperlinks.
 
@@ -116,7 +117,28 @@ nmap <C-o> :back
 
 Note how `exmap` lists command names without colons and in `nmap` the colon is required.
 
+## Executing CodeMirror Commands with `cmcommand`
+
+The plugin defines a custom Ex command named `cmcommand` that exposes the full set of CodeMirror commands, some are not exposed by Obsidian's `editor:...` commands that can be used with `obcommand`.
+
+**This currently only works with the legacy (CM5) editor.**
+Support for the CM6-based editor may be added in the future.
+
+For example, in combination with `exmap` explained above:
+
+```
+exmap lineStart cmcommand goLineLeftSmart
+exmap lineEnd cmcommand goLineRight
+```
+
+The above defines two new Ex commands, `lineStart` and `lineEnd`, that go to the *visual* beginning and end of line (in contrast to the logical line).
+I find this useful to map.
+
+The full list of CodeMirror commands is available [here](https://codemirror.net/doc/manual.html#commands).
+
 ## Surround Text with `surround`
+
+**Note:** this is currently unsupported for the new (CM6-based) editor.
 
 The plugin defines a custom Ex command named `surround` to surround either your currently selected text in visual mode or the word your cursor is over in normal mode with text.
 This is particularly useful for creating wikilinks in Obsidian `[[WikiLink]]`.
@@ -137,6 +159,8 @@ map [[ :wiki
 ```
 
 ## Inserting Links/Hyperlinks with `pasteinto`
+
+**Note:** this is currently unsupported for the new (CM6-based) editor.
 
 The plugin defines a custom Ex command named `pasteinto` to paste text into your currently selected text in visual mode, or the word your cursor is over in normal mode.
 This is particularly useful for creating links/hyperlinks `[selected-text](paste)`.
@@ -172,6 +196,17 @@ When you enter insert mode, you will type in your actual current system layout/l
 Relative line numbers work very nicely with [this](https://github.com/nadavspi/obsidian-relative-line-numbers) Obsidian plugin (thank you @piotryordanov for bringing it to my attention!)
 
 ## Changelog
+
+### 0.5.0
+
+Added partial support to the new (CM6-based) editor.
+Personal note: the CM6 update landed while I'm going through extremely busy weeks.
+I was therefore not yet able to give it the full attention it deserves, but since many users need this plugin updated, I'm releasing it in a slightly immature state.
+The core functionality works, but some plugin features are not yet supported in CM6, most notably `surround` (and its derivatives) and `cmcommand`.
+I'll do my best to find the time to complete the missing pieces in the next few days and handle reported issues quickly.
+
+### 0.4.6
+- Added the `cmcommand` command for executing arbitrary CodeMirror commands.
 
 ### 0.4.5
 Apparently the fix in version 0.4.4 was not good enough. Hopefully we're done with this issue now.

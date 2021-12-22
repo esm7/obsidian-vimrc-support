@@ -200,9 +200,11 @@ Relative line numbers work very nicely with [this](https://github.com/nadavspi/o
 ### 0.5.0
 
 Added partial support to the new (CM6-based) editor.
+
 Personal note: the CM6 update landed while I'm going through extremely busy weeks.
 I was therefore not yet able to give it the full attention it deserves, but since many users need this plugin updated, I'm releasing it in a slightly immature state.
 The core functionality works, but some plugin features are not yet supported in CM6, most notably `surround` (and its derivatives) and `cmcommand`.
+
 I'll do my best to find the time to complete the missing pieces in the next few days and handle reported issues quickly.
 
 ### 0.4.6

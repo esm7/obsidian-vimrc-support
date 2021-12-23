@@ -153,7 +153,7 @@ export default class VimrcPlugin extends Plugin {
 
 	private getCodeMirror(view: MarkdownView): CodeMirror.Editor {
 		if (this.editorMode == 'cm6')
-			return (view as any).sourceMode?.cmEditor.cm.cm;
+			return (view as any).sourceMode?.cmEditor?.cm?.cm;
 		else
 			return (view as any).sourceMode?.cmEditor;
 	}

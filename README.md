@@ -197,6 +197,10 @@ Relative line numbers work very nicely with [this](https://github.com/nadavspi/o
 
 ## Changelog
 
+### 0.5.1
+
+- Fixed a possible exception.
+
 ### 0.5.0
 
 Added partial support to the new (CM6-based) editor.

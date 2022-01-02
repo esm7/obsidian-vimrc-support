@@ -42,6 +42,7 @@ export default class VimrcPlugin extends Plugin {
 
 	private codeMirrorVimObject: any = null;
 	private editorMode: 'cm5' | 'cm6' = null;
+	private initialized = false;
 
 	private lastYankBuffer = new Array<string>(0);
 	private lastSystemClipboard = "";
@@ -73,33 +74,21 @@ export default class VimrcPlugin extends Plugin {
 		return keyMap;
 	}
 
-	async onload() {
-		if ((this.app.vault as any).config?.legacyEditor) {
-			this.codeMirrorVimObject = CodeMirror.Vim;
-			this.editorMode = 'cm5';
-			console.log('Vimrc plugin: using CodeMirror 5 mode');
-		} else {
+	async initialize() {
+		if (this.initialized)
+			return;
+
+		// Determine if we have the legacy Obsidian editor (CM5) or the new one (CM6).
+		// This is only available after Obsidian is fully loaded, so we do it as part of the `file-open` event.
+		if ('editor:toggle-source' in (this.app as any).commands.editorCommands) {
 			this.codeMirrorVimObject = (window as any).CodeMirrorAdapter?.Vim;
 			this.editorMode = 'cm6';
 			console.log('Vimrc plugin: using CodeMirror 6 mode');
+		} else {
+			this.codeMirrorVimObject = CodeMirror.Vim;
+			this.editorMode = 'cm5';
+			console.log('Vimrc plugin: using CodeMirror 5 mode');
 		}
-		await this.loadSettings();
-		this.addSettingTab(new SettingsTab(this.app, this))
-
-		this.registerEvent(this.app.workspace.on('file-open', (file: TFile) => {
-			const VIMRC_FILE_NAME = this.settings.vimrcFileName;
-			this.app.vault.adapter.read(VIMRC_FILE_NAME).
-				then((lines) => this.readVimInit(lines)).
-				catch(error => { console.log('Error loading vimrc file', VIMRC_FILE_NAME, 'from the vault root', error) });
-		}));
-
-		this.app.workspace.on('codemirror', (cm: CodeMirror.Editor) => {
-			cm.on('vim-mode-change', (modeObj: any) => {
-				if (modeObj)
-					this.logVimModeChange(modeObj);
-			});
-			this.defineFixedLayout(cm);
-		});
 
 		this.registerDomEvent(document, 'click', () => {
 			this.captureYankBuffer();
@@ -110,6 +99,22 @@ export default class VimrcPlugin extends Plugin {
 		this.registerDomEvent(document, 'focusin', () => {
 			this.captureYankBuffer();
 		})
+
+		this.initialized = true;
+	}
+
+	async onload() {
+		await this.loadSettings();
+		this.addSettingTab(new SettingsTab(this.app, this))
+
+		this.app.workspace.on('file-open', async (file: TFile) => {
+			if (!this.initialized)
+				await this.initialize();
+			const VIMRC_FILE_NAME = this.settings.vimrcFileName;
+			this.app.vault.adapter.read(VIMRC_FILE_NAME).
+				then((lines) => this.readVimInit(lines)).
+				catch(error => { console.log('Error loading vimrc file', VIMRC_FILE_NAME, 'from the vault root', error) });
+		});
 	}
 
 	async loadSettings() {
@@ -152,6 +157,7 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 	private getCodeMirror(view: MarkdownView): CodeMirror.Editor {
+		// For CM6 this actually returns an instance of the object named CodeMirror from cm_adapter of codemirror_vim
 		if (this.editorMode == 'cm6')
 			return (view as any).sourceMode?.cmEditor?.cm?.cm;
 		else
@@ -194,6 +200,14 @@ export default class VimrcPlugin extends Plugin {
 				// This is supposed to work because the Vim state is kept at the keymap level, hopefully
 				// there will not be bugs caused by operations that are kept at the object level instead
 				this.codeMirrorVimObject.loadedVimrc = true;
+			}
+
+			if (cmEditor) {
+				cmEditor.on('vim-mode-change', (modeObj: any) => {
+					if (modeObj)
+						this.logVimModeChange(modeObj);
+				});
+				this.defineFixedLayout(cmEditor);
 			}
 		}
 	}

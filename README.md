@@ -179,6 +179,8 @@ Afterwards `<Space>` can be mapped normally as any other key.
 
 ## Fixed Keyboard Layout in Normal Mode
 
+**Note:** this is currently unsupported for the new (CM6-based) editor.
+
 In many languages and keyboard layouts it becomes problematic or plain impossible to use Vim keys.
 The Vim keys are located in different positions on some keyboard layouts, which could be confusing when switching
 layouts, and on some layouts (e.g. non-Western languages) the keys for Vim movements just don't exist.
@@ -196,6 +198,11 @@ When you enter insert mode, you will type in your actual current system layout/l
 Relative line numbers work very nicely with [this](https://github.com/nadavspi/obsidian-relative-line-numbers) Obsidian plugin (thank you @piotryordanov for bringing it to my attention!)
 
 ## Changelog
+
+### 0.5.2
+
+- Fixed wrong detection of the editor (legacy vs new) on some occasions, leading to the plugin not really working in these situations.
+- Fixed issues related to Vim mode display with the new editor.
 
 ### 0.5.1
 

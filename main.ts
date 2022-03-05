@@ -119,7 +119,7 @@ export default class VimrcPlugin extends Plugin {
 		});
 
 
-		let dict_content = await this.app.vault.adapter.read(".obsidian/plugins/obsidian-vimrc-support/shuangpin_search.dict.txt")
+		let dict_content = await this.app.vault.adapter.read(".obsidian/plugins/obsidian-vimrc-support/pinyin_search.dict.txt")
 		this.complex_char_2_simple_char_mapping = new ComplexChar2SimpleCharMapping(dict_content);
 
 		this.addCommand({

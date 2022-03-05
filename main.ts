@@ -55,6 +55,8 @@ export default class VimrcPlugin extends Plugin {
 	private currentSelection: [EditorSelection] = null;
 	private isInsertMode: boolean = false;
 
+	private complex_char_2_simple_char_mapping: ComplexChar2SimpleCharMapping = null;
+
 	async captureKeyboardLayout() {
 		// This is experimental API and it might break at some point:
 		// https://developer.mozilla.org/en-US/docs/Web/API/KeyboardLayoutMap
@@ -115,6 +117,30 @@ export default class VimrcPlugin extends Plugin {
 				then((lines) => this.readVimInit(lines)).
 				catch(error => { console.log('Error loading vimrc file', VIMRC_FILE_NAME, 'from the vault root', error) });
 		});
+
+
+		let dict_content = await this.app.vault.adapter.read(".obsidian/plugins/obsidian-vimrc-support/shuangpin_search.dict.txt")
+		this.complex_char_2_simple_char_mapping = new ComplexChar2SimpleCharMapping(dict_content);
+
+		this.addCommand({
+			id: 'enrich-current-vim-search-pattern',
+			name: 'Enrich Current VIM Search Pattern',
+			editorCallback: (editor) => {
+				let vim_global_state = this.codeMirrorVimObject.getVimGlobalState_();
+				let vim_search_pattern = vim_global_state.query;
+				if(vim_search_pattern == null)
+				{
+					return;
+				}
+				let enriched_pattern = this.complex_char_2_simple_char_mapping.gen_enriched_pattern(
+					vim_search_pattern.source,
+					editor.getValue()
+				);
+				vim_global_state.query = enriched_pattern;
+			}
+
+		})
+
 	}
 
 	async loadSettings() {
@@ -514,6 +540,94 @@ export default class VimrcPlugin extends Plugin {
 	}
 }
 
+
+class ComplexChar2SimpleCharMapping {
+	_dict: Map<string, string>;
+
+	constructor(dict_content: string)
+	{
+		this._dict = new Map();		
+		dict_content.split("\n").forEach(
+			(line: string, index: number) => {
+				line = line.trim();
+				if(line != "")
+				{
+					let fields = line.split(' ');
+					console.assert(fields.length == 2,
+						`Dictionary line ${index+1} "${line}" doesn't have 2 fields.`);
+					let complex_char = fields[0];
+					let simple_chars = fields[1];
+					this._dict.set(complex_char, simple_chars);
+				}
+			}
+		)
+	}
+
+	find_next(query: string, content: string, content_idx: number)
+	{
+		let query_idx = 0;
+		for(; content_idx<content.length; content_idx++)
+		{
+			let c = content[content_idx];
+			let simple_chars = this._dict.get(c);
+			if(simple_chars == null)
+			{
+				simple_chars = c;
+			}
+			if(simple_chars.indexOf(query[query_idx]) != -1)
+			{
+				query_idx += 1;
+			} else if(simple_chars.indexOf(query[0]) != -1)
+			{
+				query_idx = 1;
+			} else {
+				query_idx = 0;
+			}
+
+			if(query_idx == query.length)
+			{
+				break;
+			}
+		}
+
+		if(query_idx == query.length)
+		{
+			return content_idx - query.length + 1;
+		} else {
+			return -1;
+		}
+	}
+
+	gen_match_list(query: string, content: string): string[]
+	{
+		if(query.length == 0)
+		{
+			return [];
+		}
+		let start_idx = 0;
+		let match_list = [];
+		while(true)
+		{
+			let matched_idx = this.find_next(query, content, start_idx);
+			if(matched_idx != -1)
+			{
+				let word = content.slice(matched_idx, matched_idx + query.length);
+				match_list.push(word);
+				start_idx = matched_idx + 1;
+			} else {
+				return match_list;
+			}
+		}
+	}
+
+	gen_enriched_pattern(query:string, content: string)
+	{
+		let match_list = this.gen_match_list(query, content);
+		let pattern = new RegExp(match_list.join("|"), "im");
+		return pattern;
+	}
+
+}
 class SettingsTab extends PluginSettingTab {
 	plugin: VimrcPlugin;
 

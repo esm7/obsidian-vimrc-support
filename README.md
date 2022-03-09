@@ -1,5 +1,7 @@
 # Obsidian Vimrc Support Plugin
 
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/esm7)
+
 This plugin loads a file of Vim commands from `VAULT_ROOT/.obsidian.vimrc`.
 For users of the Obsidian.md Vim mode, this is very useful for making various settings (most notably keymaps) persist.
 

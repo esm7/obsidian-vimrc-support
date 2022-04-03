@@ -1,5 +1,7 @@
 # Obsidian Vimrc Support Plugin
 
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/esm7)
+
 This plugin loads a file of Vim commands from `VAULT_ROOT/.obsidian.vimrc`.
 For users of the Obsidian.md Vim mode, this is very useful for making various settings (most notably keymaps) persist.
 
@@ -64,6 +66,10 @@ In some cases you can find workarounds by experimenting, and the easiest way to 
 In the Obsidian.md settings under "Third-party plugin", turn off Safe mode, then browse to this plugin.
 
 Alternatively (and less recommended), you can install it manually: just copy `main.js` and `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-vimrc-support/`.
+
+## Support the Development
+
+If you want to support the development of this plugin, please consider to [buy me a coffee](https://www.buymeacoffee.com/esm7).
 
 ## "Please implement \[some Vim feature here\]..."
 

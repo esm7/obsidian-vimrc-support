@@ -51,6 +51,7 @@ In addition to that:
 - `cmcommand` - execute arbitrary CodeMirror commands, see details below.
 - `surround` - surround your selected text in visual mode or word in normal mode with text.
 - `pasteinto` - paste your current clipboard into your selected text in visual mode or word in normal mode. Useful for creating hyperlinks.
+- `jscommand` and `jsfile` - extend Vim mode using JavaScript snippets.
 
 Commands that fail don't generate any visible error for now.
 
@@ -138,8 +139,6 @@ The full list of CodeMirror commands is available [here](https://codemirror.net/
 
 ## Surround Text with `surround`
 
-**Note:** this is currently unsupported for the new (CM6-based) editor.
-
 The plugin defines a custom Ex command named `surround` to surround either your currently selected text in visual mode or the word your cursor is over in normal mode with text.
 This is particularly useful for creating wikilinks in Obsidian `[[WikiLink]]`.
 
@@ -159,8 +158,6 @@ map [[ :wiki
 ```
 
 ## Inserting Links/Hyperlinks with `pasteinto`
-
-**Note:** this is currently unsupported for the new (CM6-based) editor.
 
 The plugin defines a custom Ex command named `pasteinto` to paste text into your currently selected text in visual mode, or the word your cursor is over in normal mode.
 This is particularly useful for creating links/hyperlinks `[selected-text](paste)`.
@@ -197,7 +194,61 @@ When you enter insert mode, you will type in your actual current system layout/l
 
 Relative line numbers work very nicely with [this](https://github.com/nadavspi/obsidian-relative-line-numbers) Obsidian plugin (thank you @piotryordanov for bringing it to my attention!)
 
+## Extending Vim Commands with JavaScript Snippets
+
+The plugin allows to define Vim commands that map to JavaScript snippets, which adds exciting new possibilities to what you can achieve with Vim key bindings. **But -- this comes with a price of a security risk, and is therefore disabled by default.**
+
+> :warning: **Security Warning**
+> 
+> Before using this feature, you **must be sure** that you understand its potential security implications.
+>
+> Running JavaScript snippets with Vim commands stored in your vault means that anyone who gains access to
+> your notes can run arbitrary code inside your Obsidian app.
+
+If you understand the risks and choose to use this feature, turn on "Support JS Commands" in the plugin settings and continue reading.
+
+### JavaScript Command Usage
+
+There are two ways to define JS-based commands.
+
+**The `jscommand` Ex command** defines a JS function that has an `editor: Editor` and `view: MarkdownView` arguments (see the [Obsidian API](https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts) if you're not sure what these are).
+You define only the syntax of the function, in a single line wrapped by curly braces, e.g.:
+
+```
+jscommand { console.log(editor.getCursor()); }
+```
+
+This will immediately log your current cursor position to the developer console.
+If you want, you can make this an Ex command using `exmap`:
+
+```
+exmap logCursor jscommand { console.log(editor.getCursor()); }
+nmap <C-q> :logCursor
+```
+
+Another version of the same functionality is **the `jsfile` Ex command**, which executes code from a file you give as a parameter, then appends another optional piece of code to it (e.g. in case you want to store several helper methods in a file and launch different ones as part of different commands).
+
+As above, the code running as part of `jsfile` has `editor: Editor` and `view: MarkdownView` arguments.
+
+Here's an example from my own `.obsidian.vimrc` that maps `]]` and `[[` to jump to the next/previous Markdown header:
+
+```
+exmap nextHeading jsfile mdHelpers.js {jumpHeading(true)}
+exmap prevHeading jsfile mdHelpers.js {jumpHeading(false)}
+nmap ]] :nextHeading
+nmap [[ :prevHeading
+```
+
+See [here](JsSnippets.md) for the full example, and please contribute your own!
+
+
 ## Changelog
+
+### 0.6.0
+
+- The `surround` and `pasteinto` commands now work with the new (CM6-based) editor.
+- Made the existence of the Vimrc file not required for other plugin features to work (https://github.com/esm7/obsidian-vimrc-support/issues/89)
+- New exciting, but dangerous, `jscommand` and `jsfile` commands, that allow extending the plugin with JavaScript snippets.
 
 ### 0.5.2
 

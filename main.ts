@@ -8,7 +8,8 @@ interface Settings {
 	displayChord: boolean,
 	displayVimMode: boolean,
 	fixedNormalModeLayout: boolean,
-	capturedKeyboardMap: Record<string, string>
+	capturedKeyboardMap: Record<string, string>,
+	supportJsCommands?: boolean
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -16,7 +17,8 @@ const DEFAULT_SETTINGS: Settings = {
 	displayChord: false,
 	displayVimMode: false,
 	fixedNormalModeLayout: false,
-	capturedKeyboardMap: {}
+	capturedKeyboardMap: {},
+	supportJsCommands: false
 }
 
 const enum vimStatus {
@@ -111,9 +113,13 @@ export default class VimrcPlugin extends Plugin {
 			if (!this.initialized)
 				await this.initialize();
 			const VIMRC_FILE_NAME = this.settings.vimrcFileName;
-			this.app.vault.adapter.read(VIMRC_FILE_NAME).
-				then((lines) => this.readVimInit(lines)).
-				catch(error => { console.log('Error loading vimrc file', VIMRC_FILE_NAME, 'from the vault root', error) });
+			let vimrcContent = '';
+			try {
+				vimrcContent = await this.app.vault.adapter.read(VIMRC_FILE_NAME);
+			} catch (e) {
+				console.log('Error loading vimrc file', VIMRC_FILE_NAME, 'from the vault root', e.message) 
+			}
+			this.readVimInit(vimrcContent);
 		});
 	}
 
@@ -174,6 +180,8 @@ export default class VimrcPlugin extends Plugin {
 				this.defineObCommand(this.codeMirrorVimObject);
 				this.defineCmCommand(this.codeMirrorVimObject);
 				this.defineSurround(this.codeMirrorVimObject);
+				this.defineJsCommand(this.codeMirrorVimObject);
+				this.defineJsFile(this.codeMirrorVimObject);
 
 				// Record the position of selections
 				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
@@ -344,8 +352,6 @@ export default class VimrcPlugin extends Plugin {
 	defineSurround(vimObject: any) {
 		// Function to surround selected text or highlighted word.
 		var surroundFunc = (params: string[]) => {
-			if (this.editorMode === 'cm6')
-				throw new Error("surround is not yet supported in the new editor. To be added soon.");
 			var editor = this.getActiveView().editor;
 			if (!params.length) {
 				throw new Error("surround requires exactly 2 parameters: prefix and postfix text.");
@@ -512,6 +518,46 @@ export default class VimrcPlugin extends Plugin {
 			}
 		});
 	}
+
+	defineJsCommand(vimObject: any) {
+		vimObject.defineEx('jscommand', '', (cm: any, params: any) => {
+			if (!this.settings.supportJsCommands)
+				throw new Error("JS commands are turned off; enable them via the Vimrc plugin configuration if you're sure you know what you're doing");
+			const jsCode = params.argString.trim() as string;
+			if (jsCode[0] != '{' || jsCode[jsCode.length - 1] != '}')
+				throw new Error("Expected an argument which is JS code surrounded by curly brackets: {...}");
+			const command = Function('editor', 'view', jsCode);
+			const view = this.getActiveView();
+			command(view.editor, view);
+		});
+	}
+
+	defineJsFile(vimObject: any) {
+		vimObject.defineEx('jsfile', '', async (cm: any, params: any) => {
+			if (!this.settings.supportJsCommands)
+				throw new Error("JS commands are turned off; enable them via the Vimrc plugin configuration if you're sure you know what you're doing");
+			if (params?.args?.length < 1)
+				throw new Error("Expected format: fileName {extraCode}");
+			let extraCode = '';
+			const fileName = params.args[0];
+			if (params.args.length > 1) {
+				params.args.shift();
+				extraCode = params.args.join(' ').trim() as string;
+				if (extraCode[0] != '{' || extraCode[extraCode.length - 1] != '}')
+					throw new Error("Expected an extra code argument which is JS code surrounded by curly brackets: {...}");
+			}
+			let content = '';
+			try {
+				content = await this.app.vault.adapter.read(fileName);
+			} catch (e) {
+				throw new Error(`Cannot read file ${params.args[0]} from vault root: ${e.message}`);
+			}
+			const command = Function('editor', 'view', content + extraCode);
+			const view = this.getActiveView();
+			command(view.editor, view);
+		});
+	}
+
 }
 
 class SettingsTab extends PluginSettingTab {
@@ -582,5 +628,16 @@ class SettingsTab extends PluginSettingTab {
 					this.plugin.saveSettings();
 				});
 			})
+
+		new Setting(containerEl)
+			.setName('Support JS commands (beware!)')
+			.setDesc("Support the 'jscommand' and 'jsfile' commands, which allow defining Ex commands using Javascript. WARNING! Review the README to understand why this may be dangerous before enabling.")
+			.addToggle(toggle => {
+				toggle.setValue(this.plugin.settings.supportJsCommands ?? DEFAULT_SETTINGS.supportJsCommands);
+				toggle.onChange(value => {
+					this.plugin.settings.supportJsCommands = value;
+					this.plugin.saveSettings();
+				})
+			});
 	}
 }

@@ -218,7 +218,7 @@ If you understand the risks and choose to use this feature, turn on "Support JS 
 There are two ways to define JS-based commands.
 
 **The `jscommand` Ex command** defines a JS function that has an `editor: Editor` and `view: MarkdownView` arguments (see the [Obsidian API](https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts) if you're not sure what these are).
-You define only the syntax of the function, in a single line wrapped by curly braces, e.g.:
+You define only the body of the function, in a single line wrapped by curly braces, e.g.:
 
 ```
 jscommand { console.log(editor.getCursor()); }
@@ -249,6 +249,10 @@ See [here](JsSnippets.md) for the full example, and please contribute your own!
 
 
 ## Changelog
+
+### 0.6.1
+
+- Fixed backward selection error in `surround` (https://github.com/esm7/obsidian-vimrc-support/issues/91)
 
 ### 0.6.0
 

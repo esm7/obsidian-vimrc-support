@@ -400,6 +400,10 @@ export default class VimrcPlugin extends Plugin {
 					head: {line: chosenSelection.head.line, ch: wordEnd}
 				};
 			}
+			// If the selection is reverse, switch the variables
+			if (chosenSelection.anchor.line > chosenSelection.head.line ||
+					(chosenSelection.anchor.line == chosenSelection.head.line && chosenSelection.anchor.ch > chosenSelection.head.ch))
+				[chosenSelection.anchor, chosenSelection.head] = [chosenSelection.head, chosenSelection.anchor];
 			let currText = editor.getRange(chosenSelection.anchor, chosenSelection.head);
 			editor.replaceRange(beginning + currText + ending, chosenSelection.anchor, chosenSelection.head);
 		}

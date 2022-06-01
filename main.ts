@@ -112,12 +112,16 @@ export default class VimrcPlugin extends Plugin {
 		this.app.workspace.on('file-open', async (file: TFile) => {
 			if (!this.initialized)
 				await this.initialize();
-			const VIMRC_FILE_NAME = this.settings.vimrcFileName;
+			let fileName = this.settings.vimrcFileName;
+			if (!fileName || fileName.trim().length === 0) {
+				fileName = DEFAULT_SETTINGS.vimrcFileName;
+				console.log('Configured Vimrc file name is illegal, falling-back to default');
+			}
 			let vimrcContent = '';
 			try {
-				vimrcContent = await this.app.vault.adapter.read(VIMRC_FILE_NAME);
+				vimrcContent = await this.app.vault.adapter.read(fileName);
 			} catch (e) {
-				console.log('Error loading vimrc file', VIMRC_FILE_NAME, 'from the vault root', e.message) 
+				console.log('Error loading vimrc file', fileName, 'from the vault root', e.message) 
 			}
 			this.readVimInit(vimrcContent);
 		});
@@ -530,9 +534,11 @@ export default class VimrcPlugin extends Plugin {
 			const jsCode = params.argString.trim() as string;
 			if (jsCode[0] != '{' || jsCode[jsCode.length - 1] != '}')
 				throw new Error("Expected an argument which is JS code surrounded by curly brackets: {...}");
-			const command = Function('editor', 'view', jsCode);
+			let currentSelections = this.currentSelection;
+			var chosenSelection = currentSelections[0];
+			const command = Function('editor', 'view', 'selection', jsCode);
 			const view = this.getActiveView();
-			command(view.editor, view);
+			command(view.editor, view, chosenSelection);
 		});
 	}
 

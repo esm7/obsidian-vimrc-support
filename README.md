@@ -217,7 +217,7 @@ If you understand the risks and choose to use this feature, turn on "Support JS 
 
 There are two ways to define JS-based commands.
 
-**The `jscommand` Ex command** defines a JS function that has an `editor: Editor` and `view: MarkdownView` arguments (see the [Obsidian API](https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts) if you're not sure what these are).
+**The `jscommand` Ex command** defines a JS function that has an `editor: Editor`, a `view: MarkdownView` and a `selection: EditorSelection` arguments (see the [Obsidian API](https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts) if you're not sure what these are).
 You define only the body of the function, in a single line wrapped by curly braces, e.g.:
 
 ```
@@ -234,7 +234,7 @@ nmap <C-q> :logCursor
 
 Another version of the same functionality is **the `jsfile` Ex command**, which executes code from a file you give as a parameter, then appends another optional piece of code to it (e.g. in case you want to store several helper methods in a file and launch different ones as part of different commands).
 
-As above, the code running as part of `jsfile` has `editor: Editor` and `view: MarkdownView` arguments.
+As above, the code running as part of `jsfile` has the arguments `editor: Editor`, `view: MarkdownView` and `selection: EditorSelection`.
 
 Here's an example from my own `.obsidian.vimrc` that maps `]]` and `[[` to jump to the next/previous Markdown header:
 
@@ -249,6 +249,11 @@ See [here](JsSnippets.md) for the full example, and please contribute your own!
 
 
 ## Changelog
+
+### 0.6.2
+
+- Fixed the default Vimrc file name not used if the setting is overriden & empty.
+- Added a `selection` argument to `jscommand` (https://github.com/esm7/obsidian-vimrc-support/issues/99).
 
 ### 0.6.1
 

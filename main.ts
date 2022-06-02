@@ -562,9 +562,11 @@ export default class VimrcPlugin extends Plugin {
 			} catch (e) {
 				throw new Error(`Cannot read file ${params.args[0]} from vault root: ${e.message}`);
 			}
-			const command = Function('editor', 'view', content + extraCode);
+			let currentSelections = this.currentSelection;
+			var chosenSelection = currentSelections[0];
+			const command = Function('editor', 'view', 'selection', content + extraCode);
 			const view = this.getActiveView();
-			command(view.editor, view);
+			command(view.editor, view, chosenSelection);
 		});
 	}
 

@@ -20,8 +20,8 @@ interface Settings {
 
 const DEFAULT_SETTINGS: Settings = {
 	vimrcFileName: ".obsidian.vimrc",
-	systemClipboard: true,
-	yank: true,
+	systemClipboard: false,
+	yank: false,
 	change: false,
 	delete: false,
 	displayChord: false,

@@ -50,11 +50,8 @@ function sleep(ms: number) {
 }
 
 class YankEvent extends Events {
-	on(name: 'vim-yank', callback: (text: string) => void): EventRef;
-	on(name: 'vim-change', callback: (text: string) => void): EventRef;
-	on(name: 'vim-delete', callback: (text: string) => void): EventRef;
-	on(name: string, callback: (...data: any) => any, ctx?: any): EventRef {
-		return super.on(name, callback, ctx);
+	on(name: 'vim-yank' | 'vim-change' | 'vim-delete', callback: (text: string) => void): EventRef {
+		return super.on(name, callback);
 	}
 }
 
@@ -141,14 +138,18 @@ export default class VimrcPlugin extends Plugin {
 					window.CodeMirrorAdapter?.Vim.getRegisterController(), {
 						pushText(oldMethod: any) {
 							return dedupe (key, oldMethod, function (...args: any[]) {
+								// @ts-expect-error
 								switch (args.at(1)) {
 									case 'yank':
+										// @ts-expect-error
 										yank.trigger('vim-yank', args.at(2));
 										break;
 									case 'change':
+										// @ts-expect-error
 										yank.trigger('vim-change', args.at(2));
 										break;
 									case 'delete':
+										// @ts-expect-error
 										yank.trigger('vim-delete', args.at(2));
 										break;
 								}

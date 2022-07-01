@@ -8,6 +8,9 @@ declare const CodeMirror: any;
 interface Settings {
 	vimrcFileName: string,
 	systemClipboard: boolean,
+	yank: boolean,
+	change: boolean,
+	delete: boolean,
 	displayChord: boolean,
 	displayVimMode: boolean,
 	fixedNormalModeLayout: boolean,
@@ -18,6 +21,9 @@ interface Settings {
 const DEFAULT_SETTINGS: Settings = {
 	vimrcFileName: ".obsidian.vimrc",
 	systemClipboard: true,
+	yank: true,
+	change: false,
+	delete: false,
 	displayChord: false,
 	displayVimMode: false,
 	fixedNormalModeLayout: false,
@@ -45,6 +51,8 @@ function sleep(ms: number) {
 
 class YankEvent extends Events {
 	on(name: 'vim-yank', callback: (text: string) => void): EventRef;
+	on(name: 'vim-change', callback: (text: string) => void): EventRef;
+	on(name: 'vim-delete', callback: (text: string) => void): EventRef;
 	on(name: string, callback: (...data: any) => any, ctx?: any): EventRef {
 		return super.on(name, callback, ctx);
 	}
@@ -132,9 +140,12 @@ export default class VimrcPlugin extends Plugin {
 					window.CodeMirrorAdapter?.Vim.getRegisterController(), {
 						pushText(oldMethod: any) {
 							return function (...args: any[]) {
-								// @ts-ignore
 								if (args.at(1) === 'yank')
 									yank.trigger('vim-yank', args.at(2))
+								if (args.at(1) === 'change')
+									yank.trigger('vim-change', args.at(2))
+								if (args.at(1) === 'delete')
+									yank.trigger('vim-delete', args.at(2))
 
 								return oldMethod && oldMethod.apply(this, args);
 							};
@@ -142,9 +153,21 @@ export default class VimrcPlugin extends Plugin {
 					}
 				)
 			)
-			this.registerEvent(yank.on('vim-yank', (text) => {
-				navigator.clipboard.writeText(text);
-			}))
+			if (this.settings.yank) {
+				this.registerEvent(yank.on('vim-yank', (text) => {
+					navigator.clipboard.writeText(text);
+				}))
+			}
+			if (this.settings.change) {
+				this.registerEvent(yank.on('vim-change', (text) => {
+					navigator.clipboard.writeText(text);
+				}))
+			}
+			if (this.settings.delete) {
+				this.registerEvent(yank.on('vim-delete', (text) => {
+					navigator.clipboard.writeText(text);
+				}))
+			}
 		}
 
 	}
@@ -588,15 +611,49 @@ class SettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Use system clipboard for yanks')
-			.setDesc('If enabled, yanks will be copied into the system clipboard (requires restart)')
+			.setName('Use system clipboard')
+			.setDesc('If enabled you can choose whether yanks, changes and/or deletions shall be copied to the system clipboard')
 			.addToggle((toggle) => {
 				toggle.setValue(this.plugin.settings.systemClipboard);
-				toggle.onChange(value => {
+				toggle.onChange(async value => {
 					this.plugin.settings.systemClipboard = value;
-					this.plugin.saveSettings();
+					await this.plugin.saveSettings();
+					this.display()
 				})
 			});
+
+		if (this.plugin.settings.systemClipboard) {
+			new Setting(containerEl)
+				.setName('Use system clipboard for yanks (y)')
+				.setDesc('If enabled, yanks will be copied into the system clipboard (requires restart)')
+				.addToggle((toggle) => {
+					toggle.setValue(this.plugin.settings.yank);
+					toggle.onChange(async value => {
+						this.plugin.settings.yank = value;
+						await this.plugin.saveSettings();
+					})
+				});
+			new Setting(containerEl)
+				.setName('Use system clipboard for changes (c)')
+				.setDesc('If enabled, changes will be copied into the system clipboard (requires restart)')
+				.addToggle((toggle) => {
+					toggle.setValue(this.plugin.settings.change);
+					toggle.onChange(async value => {
+						this.plugin.settings.change = value;
+						await this.plugin.saveSettings();
+					})
+				});
+			new Setting(containerEl)
+				.setName('Use system clipboard for deletions (d)')
+				.setDesc('If enabled, deletions will be copied into the system clipboard (requires restart)')
+				.addToggle((toggle) => {
+					toggle.setValue(this.plugin.settings.delete);
+					toggle.onChange(async value => {
+						this.plugin.settings.delete = value;
+						await this.plugin.saveSettings();
+					})
+				});
+		}
 
 		new Setting(containerEl)
 			.setName('Vim chord display')

@@ -1,6 +1,6 @@
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
 import {App, EditorSelection, Events, EventRef, MarkdownView, Notice, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
-import {around} from "monkey-around";
+import {dedupe, around} from "monkey-around";
 
 
 declare const CodeMirror: any;
@@ -135,20 +135,26 @@ export default class VimrcPlugin extends Plugin {
 
 		if (this.settings.systemClipboard) {
 			const yank = new YankEvent();
+			const key = 'obsidian-vimrc-pushText';
 			this.register(around(
 					// @ts-expect-error, not typed
 					window.CodeMirrorAdapter?.Vim.getRegisterController(), {
 						pushText(oldMethod: any) {
-							return function (...args: any[]) {
-								if (args.at(1) === 'yank')
-									yank.trigger('vim-yank', args.at(2))
-								if (args.at(1) === 'change')
-									yank.trigger('vim-change', args.at(2))
-								if (args.at(1) === 'delete')
-									yank.trigger('vim-delete', args.at(2))
+							return dedupe (key, oldMethod, function (...args: any[]) {
+								switch (args.at(1)) {
+									case 'yank':
+										yank.trigger('vim-yank', args.at(2));
+										break;
+									case 'change':
+										yank.trigger('vim-change', args.at(2));
+										break;
+									case 'delete':
+										yank.trigger('vim-delete', args.at(2));
+										break;
+								}
 
 								return oldMethod && oldMethod.apply(this, args);
-							};
+							});
 						},
 					}
 				)

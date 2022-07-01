@@ -5,5 +5,5 @@
   "description": "Auto-load a startup file with Obsidian Vim commands.",
   "author": "esm",
   "authorUrl": "",
-  "isDesktopOnly": true
+  "isDesktopOnly": false
 }

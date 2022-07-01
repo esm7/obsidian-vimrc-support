@@ -27,9 +27,6 @@ nmap L $
 " Quickly remove search highlights
 nmap <F9> :nohl
 
-" Yank to system clipboard
-set clipboard=unnamed
-
 " Go back and forward with Ctrl+O and Ctrl+I
 " (make sure to remove default Obsidian shortcuts for these to work)
 exmap back obcommand app:go-back
@@ -45,7 +42,7 @@ I couldn't find a formal list anywhere but you can look for `defaultExCommandMap
 
 In addition to that:
 - The plugin skips blank lines and lines starting with Vimscript comments (`" ...`).
-- Special support for yanking to system clipboard can be activated by `set clipboard=unnamed` (`unnamedplus` will do the same thing).
+- Special support for yanking to the system clipboard is activated by default and can be turned off in the settings.
 - Support for the `tabstop` Vim option (e.g. `set tabstop=4`).
 - Custom mapping/unmapping commands in addition to the defaults: `noremap` and `iunmap` (PRs are welcome to implement more :) )
 - `exmap [commandName] [command...]`: a command to map Ex commands. This should basically be supported in regular `:map`, but doesn't work with multi-argument commands due to a CodeMirror bug, so this is a workaround.

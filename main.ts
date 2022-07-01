@@ -1,10 +1,13 @@
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
-import { Editor, EditorSelection, Notice, App, MarkdownView, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+import {App, EditorSelection, Events, EventRef, MarkdownView, Notice, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
+import {around} from "monkey-around";
+
 
 declare const CodeMirror: any;
 
 interface Settings {
 	vimrcFileName: string,
+	systemClipboard: boolean,
 	displayChord: boolean,
 	displayVimMode: boolean,
 	fixedNormalModeLayout: boolean,
@@ -14,6 +17,7 @@ interface Settings {
 
 const DEFAULT_SETTINGS: Settings = {
 	vimrcFileName: ".obsidian.vimrc",
+	systemClipboard: true,
 	displayChord: false,
 	displayVimMode: false,
 	fixedNormalModeLayout: false,
@@ -39,6 +43,14 @@ function sleep(ms: number) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+class YankEvent extends Events {
+	on(name: 'vim-yank', callback: (text: string) => void): EventRef;
+	on(name: string, callback: (...data: any) => any, ctx?: any): EventRef {
+		return super.on(name, callback, ctx);
+	}
+}
+
+
 export default class VimrcPlugin extends Plugin {
 	settings: Settings;
 
@@ -46,9 +58,6 @@ export default class VimrcPlugin extends Plugin {
 	private editorMode: 'cm5' | 'cm6' = null;
 	private initialized = false;
 
-	private lastYankBuffer = new Array<string>(0);
-	private lastSystemClipboard = "";
-	private yankToSystemClipboard: boolean = false;
 	private currentKeyChord: any = [];
 	private vimChordStatusBar: HTMLElement = null;
 	private vimStatusBar: HTMLElement = null;
@@ -92,22 +101,14 @@ export default class VimrcPlugin extends Plugin {
 			console.log('Vimrc plugin: using CodeMirror 5 mode');
 		}
 
-		this.registerDomEvent(document, 'click', () => {
-			this.captureYankBuffer();
-		});
-		this.registerDomEvent(document, 'keyup', () => {
-			this.captureYankBuffer();
-		});
-		this.registerDomEvent(document, 'focusin', () => {
-			this.captureYankBuffer();
-		})
-
 		this.initialized = true;
 	}
 
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new SettingsTab(this.app, this))
+
+
 
 		this.app.workspace.on('file-open', async (file: TFile) => {
 			if (!this.initialized)
@@ -125,6 +126,29 @@ export default class VimrcPlugin extends Plugin {
 			}
 			this.readVimInit(vimrcContent);
 		});
+
+		if (this.settings.systemClipboard) {
+			const yank = new YankEvent();
+			this.register(around(
+					// @ts-expect-error, not typed
+					window.CodeMirrorAdapter?.Vim.getRegisterController(), {
+						pushText(oldMethod: any) {
+							return function (...args: any[]) {
+								// @ts-ignore
+								if (args.at(1) === 'yank')
+									yank.trigger('vim-yank', args.at(2))
+
+								return oldMethod.apply(this, args);
+							};
+						},
+					}
+				)
+			)
+			this.registerEvent(yank.on('vim-yank', (text) => {
+				navigator.clipboard.writeText(text);
+			}))
+		}
+
 	}
 
 	async loadSettings() {
@@ -225,19 +249,6 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 	defineBasicCommands(vimObject: any) {
-		vimObject.defineOption('clipboard', '', 'string', ['clip'], (value: string, cm: any) => {
-			if (value) {
-				if (value.trim() == 'unnamed' || value.trim() == 'unnamedplus') {
-					if (!this.yankToSystemClipboard) {
-						this.yankToSystemClipboard = true;
-						console.log("Vim is now set to yank to system clipboard.");
-					}
-				} else {
-					throw new Error("Unrecognized clipboard option, supported are 'unnamed' and 'unnamedplus' (and they do the same)")
-				}
-			}
-		});
-
 		vimObject.defineOption('tabstop', 4, 'number', [], (value: number, cm: any) => {
 			if (value && cm) {
 				cm.setOption('tabSize', value);
@@ -445,27 +456,6 @@ export default class VimrcPlugin extends Plugin {
 
 	}
 
-	captureYankBuffer() {
-		if (this.yankToSystemClipboard) {
-			let currentBuffer = this.codeMirrorVimObject.getRegisterController().getRegister('yank').keyBuffer;
-			if (currentBuffer != this.lastYankBuffer) {
-				if (this.lastYankBuffer.length > 0 && currentBuffer.length > 0 && currentBuffer[0]) {
-					navigator.clipboard.writeText(currentBuffer[0]);
-					navigator.clipboard.readText().then((value) => { this.lastSystemClipboard = value; });
-				}
-				this.lastYankBuffer = currentBuffer;
-				return;
-			}
-			let currentClipboard = navigator.clipboard.readText().then((value) => {
-				if (value != this.lastSystemClipboard) {
-					let yankRegister = this.codeMirrorVimObject.getRegisterController().getRegister('yank')
-					yankRegister.setText(value);
-					this.lastYankBuffer = yankRegister.keyBuffer;
-					this.lastSystemClipboard = value;
-				}
-			})
-		}
-	}
 
 	prepareChordDisplay() {
 		if (this.settings.displayChord) {
@@ -595,6 +585,17 @@ class SettingsTab extends PluginSettingTab {
 				text.setValue(this.plugin.settings.vimrcFileName || DEFAULT_SETTINGS.vimrcFileName);
 				text.onChange(value => {
 					this.plugin.settings.vimrcFileName = value;
+					this.plugin.saveSettings();
+				})
+			});
+
+		new Setting(containerEl)
+			.setName('Use system clipboard for yanks')
+			.setDesc('If enabled, yanks will be copied into the system clipboard (requires restart)')
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.systemClipboard);
+				toggle.onChange(value => {
+					this.plugin.settings.systemClipboard = value;
 					this.plugin.saveSettings();
 				})
 			});

@@ -108,8 +108,6 @@ export default class VimrcPlugin extends Plugin {
 		await this.loadSettings();
 		this.addSettingTab(new SettingsTab(this.app, this))
 
-
-
 		this.app.workspace.on('file-open', async (file: TFile) => {
 			if (!this.initialized)
 				await this.initialize();
@@ -138,7 +136,7 @@ export default class VimrcPlugin extends Plugin {
 								if (args.at(1) === 'yank')
 									yank.trigger('vim-yank', args.at(2))
 
-								return oldMethod.apply(this, args);
+								return oldMethod && oldMethod.apply(this, args);
 							};
 						},
 					}

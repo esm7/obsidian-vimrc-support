@@ -464,8 +464,8 @@ export default class VimrcPlugin extends Plugin {
 		const buf = currentYankBuffer[0]
 		if (buf !== this.lastYankBuffer[0]) {
 			await win.navigator.clipboard.writeText(buf);
-			this.lastSystemClipboard = buf
 			this.lastYankBuffer = currentYankBuffer
+			this.lastSystemClipboard = await win.navigator.clipboard.readText()
 			return
 		}
 

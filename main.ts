@@ -46,7 +46,7 @@ export default class VimrcPlugin extends Plugin {
 	private editorMode: 'cm5' | 'cm6' = null;
 	private initialized = false;
 
-	private lastYankBuffer = new Array<string>(0);
+	private lastYankBuffer: string[] = [""];
 	private lastSystemClipboard = "";
 	private yankToSystemClipboard: boolean = false;
 	private currentKeyChord: any = [];

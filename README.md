@@ -124,25 +124,6 @@ nmap <C-o> :back
 
 Note how `exmap` lists command names without colons and in `nmap` the colon is required.
 
-## Executing CodeMirror Commands with `cmcommand`
-
-The plugin defines a custom Ex command named `cmcommand` that exposes the full set of CodeMirror commands, some are not exposed by Obsidian's `editor:...` commands that can be used with `obcommand`.
-
-**This currently only works with the legacy (CM5) editor.**
-Support for the CM6-based editor may be added in the future.
-
-For example, in combination with `exmap` explained above:
-
-```
-exmap lineStart cmcommand goLineLeftSmart
-exmap lineEnd cmcommand goLineRight
-```
-
-The above defines two new Ex commands, `lineStart` and `lineEnd`, that go to the *visual* beginning and end of line (in contrast to the logical line).
-I find this useful to map.
-
-The full list of CodeMirror commands is available [here](https://codemirror.net/doc/manual.html#commands).
-
 ## Surround Text with `surround`
 
 The plugin defines a custom Ex command named `surround` to surround either your currently selected text in visual mode or the word your cursor is over in normal mode with text.
@@ -249,6 +230,15 @@ See [here](JsSnippets.md) for the full example, and please contribute your own!
 
 
 ## Changelog
+
+### 0.7.0
+
+**IMPORTANT: this version drops support for the legacy (CM5) Obsidian editor.**
+If you are sticking to the legacy editor until Obsidian removes it, you cannot upgrade to this version of the plugin.
+
+### 0.6.3
+
+Added `selection` also to `jsfile` (thanks @twio142!)
 
 ### 0.6.2
 

@@ -80,17 +80,7 @@ export default class VimrcPlugin extends Plugin {
 		if (this.initialized)
 			return;
 
-		// Determine if we have the legacy Obsidian editor (CM5) or the new one (CM6).
-		// This is only available after Obsidian is fully loaded, so we do it as part of the `file-open` event.
-		if ('editor:toggle-source' in (this.app as any).commands.editorCommands) {
-			this.codeMirrorVimObject = (window as any).CodeMirrorAdapter?.Vim;
-			this.editorMode = 'cm6';
-			console.log('Vimrc plugin: using CodeMirror 6 mode');
-		} else {
-			this.codeMirrorVimObject = CodeMirror.Vim;
-			this.editorMode = 'cm5';
-			console.log('Vimrc plugin: using CodeMirror 5 mode');
-		}
+		this.codeMirrorVimObject = (window as any).CodeMirrorAdapter?.Vim;
 
 		this.registerDomEvent(document, 'click', () => {
 			this.captureYankBuffer();
@@ -167,11 +157,7 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 	private getCodeMirror(view: MarkdownView): CodeMirror.Editor {
-		// For CM6 this actually returns an instance of the object named CodeMirror from cm_adapter of codemirror_vim
-		if (this.editorMode == 'cm6')
-			return (view as any).sourceMode?.cmEditor?.cm?.cm;
-		else
-			return (view as any).sourceMode?.cmEditor;
+		return (view as any).sourceMode?.cmEditor?.cm?.cm;
 	}
 
 	readVimInit(vimCommands: string) {
@@ -182,7 +168,6 @@ export default class VimrcPlugin extends Plugin {
 				this.defineBasicCommands(this.codeMirrorVimObject);
 				this.defineSendKeys(this.codeMirrorVimObject);
 				this.defineObCommand(this.codeMirrorVimObject);
-				this.defineCmCommand(this.codeMirrorVimObject);
 				this.defineSurround(this.codeMirrorVimObject);
 				this.defineJsCommand(this.codeMirrorVimObject);
 				this.defineJsFile(this.codeMirrorVimObject);
@@ -336,20 +321,6 @@ export default class VimrcPlugin extends Plugin {
 					throw new Error(`Command ${command} doesn't have an Obsidian callback`);
 			} else
 				throw new Error(`Command ${command} was not found, try 'obcommand' with no params to see in the developer console what's available`);
-		});
-	}
-
-	defineCmCommand(vimObject: any) {
-		vimObject.defineEx('cmcommand', '', async (cm: any, params: any) => {
-			if (!params?.args?.length || params.args.length != 1) {
-				throw new Error(`cmcommand requires exactly 1 parameter`);
-			}
-			if (this.editorMode === 'cm5') {
-				let cmEditor = this.getCodeMirror(this.getActiveView());
-				cmEditor.execCommand(params.args[0]);
-			}
-			else
-				throw new Error('cmcommand currently only works on the legacy CM5 editor');
 		});
 	}
 

@@ -262,8 +262,8 @@ See [here](JsSnippets.md) for the full example, and please contribute your own!
 **IMPORTANT: this version drops support for the legacy (CM5) Obsidian editor.**
 If you are sticking to the legacy editor until Obsidian removes it, you cannot upgrade to this version of the plugin.
 
-- Removed support for the legacy (CM5) editor.
-  - This fixes [issues](https://github.com/esm7/obsidian-vimrc-support/issues/118) in the detection of the editor type.
+- Fixed multiple issues (like [this one](https://github.com/esm7/obsidian-vimrc-support/issues/118)) related to bad detection of the editor type.
+  - They were fixed by no longer trying to detect the editor type ;) Support for the legacy editor has become clumsy and it was time to drop it.
 - Support for Obsidian 0.15 multi windows (https://github.com/esm7/obsidian-vimrc-support/pull/110).
 
 ### 0.6.3

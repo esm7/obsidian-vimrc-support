@@ -9,7 +9,7 @@ assignees: ''
 
 **Please make sure this feature request is within the scope of this plugin.**
 
-If it's about supporting some Vim feature, it probably belongs [here](https://github.com/replit/codemirror-vim).
+- [ ] I understand that if my request is about supporting some Vim feature, it probably belongs [here](https://github.com/replit/codemirror-vim).
 
 **Describe the feature that you'd like:**
 

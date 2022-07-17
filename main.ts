@@ -46,7 +46,7 @@ export default class VimrcPlugin extends Plugin {
 	private editorMode: 'cm5' | 'cm6' = null;
 	private initialized = false;
 
-	private lastYankBuffer = new Array<string>(0);
+	private lastYankBuffer: string[] = [""];
 	private lastSystemClipboard = "";
 	private yankToSystemClipboard: boolean = false;
 	private currentKeyChord: any = [];
@@ -82,17 +82,24 @@ export default class VimrcPlugin extends Plugin {
 
 		this.codeMirrorVimObject = (window as any).CodeMirrorAdapter?.Vim;
 
-		this.registerDomEvent(document, 'click', () => {
-			this.captureYankBuffer();
-		});
-		this.registerDomEvent(document, 'keyup', () => {
-			this.captureYankBuffer();
-		});
-		this.registerDomEvent(document, 'focusin', () => {
-			this.captureYankBuffer();
+		await this.registerYankEvents(activeWindow)
+		this.app.workspace.on("window-open", (workspaceWindow, w) => {
+			this.registerYankEvents(w)
 		})
 
 		this.initialized = true;
+	}
+
+	registerYankEvents(win: Window) {
+		this.registerDomEvent(win.document, 'click', () => {
+			this.captureYankBuffer(win);
+		});
+		this.registerDomEvent(win.document, 'keyup', () => {
+			this.captureYankBuffer(win);
+		});
+		this.registerDomEvent(win.document, 'focusin', () => {
+			this.captureYankBuffer(win);
+		})
 	}
 
 	async onload() {
@@ -416,25 +423,34 @@ export default class VimrcPlugin extends Plugin {
 
 	}
 
-	captureYankBuffer() {
-		if (this.yankToSystemClipboard) {
-			let currentBuffer = this.codeMirrorVimObject.getRegisterController().getRegister('yank').keyBuffer;
-			if (currentBuffer != this.lastYankBuffer) {
-				if (this.lastYankBuffer.length > 0 && currentBuffer.length > 0 && currentBuffer[0]) {
-					navigator.clipboard.writeText(currentBuffer[0]);
-					navigator.clipboard.readText().then((value) => { this.lastSystemClipboard = value; });
-				}
-				this.lastYankBuffer = currentBuffer;
-				return;
+	async captureYankBuffer(win: Window) {
+		if (!this.yankToSystemClipboard) {
+			return
+		}
+
+		const yankRegister = this.codeMirrorVimObject.getRegisterController().getRegister('yank')
+		const currentYankBuffer = yankRegister.keyBuffer;
+
+		// yank -> clipboard
+		const buf = currentYankBuffer[0]
+		if (buf !== this.lastYankBuffer[0]) {
+			await win.navigator.clipboard.writeText(buf);
+			this.lastYankBuffer = currentYankBuffer
+			this.lastSystemClipboard = await win.navigator.clipboard.readText()
+			return
+		}
+
+		// clipboard -> yank
+		try {
+			const currentClipboardText = await win.navigator.clipboard.readText()
+			if (currentClipboardText !== this.lastSystemClipboard) {
+				yankRegister.setText(currentClipboardText);
+				this.lastYankBuffer = yankRegister.keyBuffer;
+				this.lastSystemClipboard = currentClipboardText;
 			}
-			let currentClipboard = navigator.clipboard.readText().then((value) => {
-				if (value != this.lastSystemClipboard) {
-					let yankRegister = this.codeMirrorVimObject.getRegisterController().getRegister('yank')
-					yankRegister.setText(value);
-					this.lastYankBuffer = yankRegister.keyBuffer;
-					this.lastSystemClipboard = value;
-				}
-			})
+		} catch (e) {
+			// XXX: Avoid "Uncaught (in promise) DOMException: Document is not focused."
+			// XXX: It is not good but easy workaround
 		}
 	}
 

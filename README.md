@@ -38,31 +38,6 @@ exmap forward obcommand app:go-forward
 nmap <C-i> :forward
 ```
 
-## Emulate Common Vim Commands via Obsidian commands
-
-Using `obcommand`, it is possible to emulate some additional vim commands that aren't included in Obsidian's vim mode, like for example `gt` and and `zo`. 
-
-```vim
-" Emulate Folding https://vimhelp.org/fold.txt.html#fold-commands
-exmap togglefold obcommand editor:toggle-fold
-nmap zo :togglefold
-nmap zc :togglefold
-nmap za :togglefold
-
-exmap unfoldall obcommand editor:unfold-all
-nmap zR :unfoldall
-
-exmap foldall obcommand editor:fold-all
-nmap zM :foldall
-
-" Emulate Tab Switching https://vimhelp.org/tabpage.txt.html#gt
-" requires Cycle Through Panes Plugins https://obsidian.md/plugins?id=cycle-through-panes
-exmap tabnext obcommand cycle-through-panes:cycle-through-panes
-nmap gt :tabnext
-exmap tabprev obcommand cycle-through-panes:cycle-through-panes-reverse
-nmap gT :tabprev
-```
-
 ## Supported Commands
 
 The commands that can be used are whatever CodeMirror supports.
@@ -186,6 +161,32 @@ map <A-p> :pasteinto
 But first `<Space>` must be unbound with `unmap <Space>`.
 Afterwards `<Space>` can be mapped normally as any other key.
 
+
+## Emulate Common Vim Commands via Obsidian commands
+
+Using `obcommand`, it is possible to emulate some additional Vim commands that aren't included in Obsidian's Vim mode, like for example `gt` and `zo`. 
+
+```vim
+" Emulate Folding https://vimhelp.org/fold.txt.html#fold-commands
+exmap togglefold obcommand editor:toggle-fold
+nmap zo :togglefold
+nmap zc :togglefold
+nmap za :togglefold
+
+exmap unfoldall obcommand editor:unfold-all
+nmap zR :unfoldall
+
+exmap foldall obcommand editor:fold-all
+nmap zM :foldall
+
+" Emulate Tab Switching https://vimhelp.org/tabpage.txt.html#gt
+" requires Cycle Through Panes Plugins https://obsidian.md/plugins?id=cycle-through-panes
+exmap tabnext obcommand cycle-through-panes:cycle-through-panes
+nmap gt :tabnext
+exmap tabprev obcommand cycle-through-panes:cycle-through-panes-reverse
+nmap gT :tabprev
+```
+
 ## Fixed Keyboard Layout in Normal Mode
 
 **Note:** this is currently unsupported for the new (CM6-based) editor.
@@ -260,6 +261,10 @@ See [here](JsSnippets.md) for the full example, and please contribute your own!
 
 **IMPORTANT: this version drops support for the legacy (CM5) Obsidian editor.**
 If you are sticking to the legacy editor until Obsidian removes it, you cannot upgrade to this version of the plugin.
+
+- Removed support for the legacy (CM5) editor.
+  - This fixes [issues](https://github.com/esm7/obsidian-vimrc-support/issues/118) in the detection of the editor type.
+- Support for Obsidian 0.15 multi windows (https://github.com/esm7/obsidian-vimrc-support/pull/110).
 
 ### 0.6.3
 

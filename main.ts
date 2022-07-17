@@ -1,5 +1,5 @@
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
-import { Editor, EditorSelection, Notice, App, MarkdownView, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+import { EditorSelection, Notice, App, MarkdownView, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
 
 declare const CodeMirror: any;
 
@@ -43,7 +43,6 @@ export default class VimrcPlugin extends Plugin {
 	settings: Settings;
 
 	private codeMirrorVimObject: any = null;
-	private editorMode: 'cm5' | 'cm6' = null;
 	private initialized = false;
 
 	private lastYankBuffer: string[] = [""];
@@ -82,9 +81,9 @@ export default class VimrcPlugin extends Plugin {
 
 		this.codeMirrorVimObject = (window as any).CodeMirrorAdapter?.Vim;
 
-		await this.registerYankEvents(activeWindow)
+		this.registerYankEvents(activeWindow);
 		this.app.workspace.on("window-open", (workspaceWindow, w) => {
-			this.registerYankEvents(w)
+			this.registerYankEvents(w);
 		})
 
 		this.initialized = true;
@@ -428,21 +427,21 @@ export default class VimrcPlugin extends Plugin {
 			return
 		}
 
-		const yankRegister = this.codeMirrorVimObject.getRegisterController().getRegister('yank')
+		const yankRegister = this.codeMirrorVimObject.getRegisterController().getRegister('yank');
 		const currentYankBuffer = yankRegister.keyBuffer;
 
 		// yank -> clipboard
 		const buf = currentYankBuffer[0]
 		if (buf !== this.lastYankBuffer[0]) {
 			await win.navigator.clipboard.writeText(buf);
-			this.lastYankBuffer = currentYankBuffer
-			this.lastSystemClipboard = await win.navigator.clipboard.readText()
+			this.lastYankBuffer = currentYankBuffer;
+			this.lastSystemClipboard = await win.navigator.clipboard.readText();
 			return
 		}
 
 		// clipboard -> yank
 		try {
-			const currentClipboardText = await win.navigator.clipboard.readText()
+			const currentClipboardText = await win.navigator.clipboard.readText();
 			if (currentClipboardText !== this.lastSystemClipboard) {
 				yankRegister.setText(currentClipboardText);
 				this.lastYankBuffer = yankRegister.keyBuffer;

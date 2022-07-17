@@ -17,7 +17,7 @@ If you're using multiple vaults, you'll need this file on each one.
 
 Here's a simple & useful `.obsidian.vimrc` that I'm using:
 
-```
+```vim
 " Have j and k navigate visual lines rather than logical ones
 nmap j gj
 nmap k gk
@@ -36,6 +36,31 @@ exmap back obcommand app:go-back
 nmap <C-o> :back
 exmap forward obcommand app:go-forward
 nmap <C-i> :forward
+```
+
+## Emulate Common Vim Commands via Obsidian commands
+
+Using `obcommand`, it is possible to emulate some additional vim commands that aren't included in Obsidian's vim mode, like for example `gt` and and `zo`. 
+
+```vim
+" Emulate Folding https://vimhelp.org/fold.txt.html#fold-commands
+exmap togglefold obcommand editor:toggle-fold
+nmap zo :togglefold
+nmap zc :togglefold
+nmap za :togglefold
+
+exmap unfoldall obcommand editor:unfold-all
+nmap zR :unfoldall
+
+exmap foldall obcommand editor:fold-all
+nmap zM :foldall
+
+" Emulate Tab Switching https://vimhelp.org/tabpage.txt.html#gt
+" requires Cycle Through Panes Plugins https://obsidian.md/plugins?id=cycle-through-panes
+exmap tabnext obcommand cycle-through-panes:cycle-through-panes
+nmap gt :tabnext
+exmap tabprev obcommand cycle-through-panes:cycle-through-panes-reverse
+nmap gT :tabprev
 ```
 
 ## Supported Commands

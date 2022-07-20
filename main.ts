@@ -521,7 +521,7 @@ export default class VimrcPlugin extends Plugin {
 			if (jsCode[0] != '{' || jsCode[jsCode.length - 1] != '}')
 				throw new Error("Expected an argument which is JS code surrounded by curly brackets: {...}");
 			let currentSelections = this.currentSelection;
-			var chosenSelection = currentSelections[0];
+			var chosenSelection = currentSelections && currentSelections.length > 0 ? currentSelections[0] : null;
 			const command = Function('editor', 'view', 'selection', jsCode);
 			const view = this.getActiveView();
 			command(view.editor, view, chosenSelection);

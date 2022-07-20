@@ -257,6 +257,10 @@ See [here](JsSnippets.md) for the full example, and please contribute your own!
 
 ## Changelog
 
+### 0.7.1
+
+Fixed `jscommand` and `jsfile` broken in the latest Obsidian update.
+
 ### 0.7.0
 
 **IMPORTANT: this version drops support for the legacy (CM5) Obsidian editor.**

@@ -104,8 +104,7 @@ export default class VimrcPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new SettingsTab(this.app, this))
-
-		this.app.workspace.on('file-open', async (file: TFile) => {
+		this.registerEvent(this.app.workspace.on('file-open', async (file: TFile) => {
 			if (!this.initialized)
 				await this.initialize();
 			let fileName = this.settings.vimrcFileName;
@@ -120,7 +119,7 @@ export default class VimrcPlugin extends Plugin {
 				console.log('Error loading vimrc file', fileName, 'from the vault root', e.message) 
 			}
 			this.readVimInit(vimrcContent);
-		});
+		}));
 	}
 
 	async loadSettings() {

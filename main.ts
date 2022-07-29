@@ -105,9 +105,13 @@ export default class VimrcPlugin extends Plugin {
 		await this.loadSettings();
 		this.addSettingTab(new SettingsTab(this.app, this))
 
-		this.app.workspace.on('file-open', async (file: TFile) => {
+		console.log('loading Vimrc plugin');
+
+		this.app.workspace.on('active-leaf-change', async () => {
 			if (!this.initialized)
 				await this.initialize();
+			if (this.codeMirrorVimObject.loadedVimrc)
+				return;
 			let fileName = this.settings.vimrcFileName;
 			if (!fileName || fileName.trim().length === 0) {
 				fileName = DEFAULT_SETTINGS.vimrcFileName;
@@ -163,7 +167,7 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 	private getCodeMirror(view: MarkdownView): CodeMirror.Editor {
-		return (view as any).sourceMode?.cmEditor?.cm?.cm;
+		return (view as any).editMode?.editor?.cm?.cm;
 	}
 
 	readVimInit(vimCommands: string) {
@@ -346,8 +350,8 @@ export default class VimrcPlugin extends Plugin {
 			let ending = newArgs[1].replace("\\\\", "\\").replace("\\ ", " "); // Get the ending surround text
 
 			let currentSelections = this.currentSelection;
-			var chosenSelection = currentSelections[0];
-			if (this.currentSelection && currentSelections.length > 1) {
+			var chosenSelection = currentSelections && currentSelections.length > 0 ? currentSelections[0] : null;
+			if (this.currentSelection && currentSelections?.length > 1) {
 				console.log("WARNING: Multiple selections in surround. Attempt to select matching cursor. (obsidian-vimrc-support)")
 				const cursorPos = editor.getCursor();
 				for (const selection of currentSelections) {
@@ -549,7 +553,7 @@ export default class VimrcPlugin extends Plugin {
 				throw new Error(`Cannot read file ${params.args[0]} from vault root: ${e.message}`);
 			}
 			let currentSelections = this.currentSelection;
-			var chosenSelection = currentSelections[0];
+			var chosenSelection = currentSelections && currentSelections.length > 0 ? currentSelections[0] : null;
 			const command = Function('editor', 'view', 'selection', content + extraCode);
 			const view = this.getActiveView();
 			command(view.editor, view, chosenSelection);

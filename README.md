@@ -257,6 +257,10 @@ See [here](JsSnippets.md) for the full example, and please contribute your own!
 
 ## Changelog
 
+### 0.7.2
+
+Fixed the plugin breaking for some users after Obsidian's recent updates, plus some optimizations.
+
 ### 0.7.1
 
 Fixed `jscommand` and `jsfile` broken in the latest Obsidian update.

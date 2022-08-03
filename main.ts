@@ -61,7 +61,7 @@ export default class VimrcPlugin extends Plugin {
 		// https://developer.mozilla.org/en-US/docs/Web/API/KeyboardLayoutMap
 		let keyMap: Record<string, string> = {};
 		let layout = await (navigator as any).keyboard.getLayoutMap();
-		let doneIterating = new Promise((resolve, reject) => {
+		let doneIterating = new Promise<void>((resolve, reject) => {
 			let counted = 0;
 			layout.forEach((value: any, index: any) => {
 				keyMap[index] = value;
@@ -546,14 +546,14 @@ export default class VimrcPlugin extends Plugin {
 				if (extraCode[0] != '{' || extraCode[extraCode.length - 1] != '}')
 					throw new Error("Expected an extra code argument which is JS code surrounded by curly brackets: {...}");
 			}
+			let currentSelections = this.currentSelection;
+			var chosenSelection = currentSelections && currentSelections.length > 0 ? currentSelections[0] : null;
 			let content = '';
 			try {
 				content = await this.app.vault.adapter.read(fileName);
 			} catch (e) {
 				throw new Error(`Cannot read file ${params.args[0]} from vault root: ${e.message}`);
 			}
-			let currentSelections = this.currentSelection;
-			var chosenSelection = currentSelections && currentSelections.length > 0 ? currentSelections[0] : null;
 			const command = Function('editor', 'view', 'selection', content + extraCode);
 			const view = this.getActiveView();
 			command(view.editor, view, chosenSelection);

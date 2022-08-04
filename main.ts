@@ -85,6 +85,9 @@ export default class VimrcPlugin extends Plugin {
 		this.app.workspace.on("window-open", (workspaceWindow, w) => {
 			this.registerYankEvents(w);
 		})
+		this.app.workspace.on("file-open", async (cm: any) => {
+			this.registerFileOpenEvent();
+		})
 
 		this.initialized = true;
 	}
@@ -99,6 +102,14 @@ export default class VimrcPlugin extends Plugin {
 		this.registerDomEvent(win.document, 'focusin', () => {
 			this.captureYankBuffer(win);
 		})
+	}
+
+	registerFileOpenEvent(){
+		// Record the position of selections in each file opened
+		let cmEditor = this.getCodeMirror(this.getActiveView());
+		CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
+			this.currentSelection = cm.listSelections();
+		});
 	}
 
 	async onload() {
@@ -181,11 +192,6 @@ export default class VimrcPlugin extends Plugin {
 				this.defineSurround(this.codeMirrorVimObject);
 				this.defineJsCommand(this.codeMirrorVimObject);
 				this.defineJsFile(this.codeMirrorVimObject);
-
-				// Record the position of selections
-				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
-					this.currentSelection = cm.listSelections()
-				});
 
 				vimCommands.split("\n").forEach(
 					function (line: string, index: number, arr: [string]) {

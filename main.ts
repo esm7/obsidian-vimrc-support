@@ -119,7 +119,6 @@ export default class VimrcPlugin extends Plugin {
             return;
         }
         cm.on("cursorActivity", function updateSelection(cm: CodeMirror.Editor) {
-            console.log('cursorActivity');
             this.currentSelection = cm.listSelections();
         });
     }

@@ -85,8 +85,15 @@ export default class VimrcPlugin extends Plugin {
 		this.app.workspace.on("window-open", (workspaceWindow, w) => {
 			this.registerYankEvents(w);
 		})
+        
+		// Two events cos
+		// this don't trigger on loading/reloading obsidian with note opened
+		this.app.workspace.on("active-leaf-change", async (cm: any) => {
+			this.updateSelectionEvent();
+		})
+		// and this don't trigger on opening same file in new pane
 		this.app.workspace.on("file-open", async (cm: any) => {
-			this.registerFileOpenEvent();
+			this.updateSelectionEvent();
 		})
 
 		this.initialized = true;
@@ -104,13 +111,23 @@ export default class VimrcPlugin extends Plugin {
 		})
 	}
 
-	registerFileOpenEvent(){
-		// Record the position of selections in each file opened
-		let cmEditor = this.getCodeMirror(this.getActiveView());
-		CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
-			this.currentSelection = cm.listSelections();
-		});
-	}
+	updateSelectionEvent() {
+        const view = this.getActiveView()
+        if (!view) { return }
+        const cm = this.getCodeMirror(view);
+        // if (cm._handlers.cursorActivity.some((e: { name: string; }) => e.name === 'updateSelection')) {
+        if (this.getCursorActivityHandlers(cm).some((e: { name: string; }) => e.name === 'updateSelection')) {
+            return;
+        }
+        cm.on("cursorActivity", function updateSelection(cm: CodeMirror.Editor) {
+            console.log('cursorActivity');
+            this.currentSelection = cm.listSelections();
+        });
+    }
+    
+    private getCursorActivityHandlers(cm: CodeMirror.Editor) {
+        return (cm as any)._handlers.cursorActivity;
+    }
 
 	async onload() {
 		await this.loadSettings();

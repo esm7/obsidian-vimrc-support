@@ -115,7 +115,6 @@ export default class VimrcPlugin extends Plugin {
         const view = this.getActiveView()
         if (!view) { return }
         const cm = this.getCodeMirror(view);
-        // if (cm._handlers.cursorActivity.some((e: { name: string; }) => e.name === 'updateSelection')) {
         if (this.getCursorActivityHandlers(cm).some((e: { name: string; }) => e.name === 'updateSelection')) {
             return;
         }

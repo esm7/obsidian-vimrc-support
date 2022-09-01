@@ -547,12 +547,12 @@ export default class VimrcPlugin extends Plugin {
 					throw new Error("Expected an extra code argument which is JS code surrounded by curly brackets: {...}");
 			}
 			let content = '';
+			let currentSelections = this.currentSelection && this.currentSelection.map(selection => ({...selection}));
 			try {
 				content = await this.app.vault.adapter.read(fileName);
 			} catch (e) {
 				throw new Error(`Cannot read file ${params.args[0]} from vault root: ${e.message}`);
 			}
-			let currentSelections = this.currentSelection;
 			var chosenSelection = currentSelections && currentSelections.length > 0 ? currentSelections[0] : null;
 			const command = Function('editor', 'view', 'selection', content + extraCode);
 			const view = this.getActiveView();

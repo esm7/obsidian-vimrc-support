@@ -61,7 +61,7 @@ export default class VimrcPlugin extends Plugin {
 		// https://developer.mozilla.org/en-US/docs/Web/API/KeyboardLayoutMap
 		let keyMap: Record<string, string> = {};
 		let layout = await (navigator as any).keyboard.getLayoutMap();
-		let doneIterating = new Promise((resolve, reject) => {
+		let doneIterating = new Promise<void>((resolve, reject) => {
 			let counted = 0;
 			layout.forEach((value: any, index: any) => {
 				keyMap[index] = value;
@@ -86,6 +86,16 @@ export default class VimrcPlugin extends Plugin {
 			this.registerYankEvents(w);
 		})
 
+		// Two events cos
+		// this don't trigger on loading/reloading obsidian with note opened
+		this.app.workspace.on("active-leaf-change", async () => {
+			this.updateSelectionEvent();
+		});
+		// and this don't trigger on opening same file in new pane
+		this.app.workspace.on("file-open", async () => {
+			this.updateSelectionEvent();
+		});
+
 		this.initialized = true;
 	}
 
@@ -99,6 +109,25 @@ export default class VimrcPlugin extends Plugin {
 		this.registerDomEvent(win.document, 'focusin', () => {
 			this.captureYankBuffer(win);
 		})
+	}
+
+	async updateSelectionEvent() {
+		const view = this.getActiveView();
+		if (!view) return
+
+		let cm = this.getCodeMirror(view);
+		if (
+			this.getCursorActivityHandlers(cm).some(
+				(e: { name: string }) => e.name === "updateSelection")
+		) return
+		cm.on("cursorActivity", async (cm: CodeMirror.Editor) => this.updateSelection(cm));
+	}
+	async updateSelection(cm: any) {
+		this.currentSelection = cm.listSelections();
+	}
+
+	private getCursorActivityHandlers(cm: CodeMirror.Editor) {
+		return (cm as any)._handlers.cursorActivity;
 	}
 
 	async onload() {
@@ -181,11 +210,6 @@ export default class VimrcPlugin extends Plugin {
 				this.defineSurround(this.codeMirrorVimObject);
 				this.defineJsCommand(this.codeMirrorVimObject);
 				this.defineJsFile(this.codeMirrorVimObject);
-
-				// Record the position of selections
-				CodeMirror.on(cmEditor, "cursorActivity", async (cm: any) => {
-					this.currentSelection = cm.listSelections()
-				});
 
 				vimCommands.split("\n").forEach(
 					function (line: string, index: number, arr: [string]) {
@@ -546,14 +570,14 @@ export default class VimrcPlugin extends Plugin {
 				if (extraCode[0] != '{' || extraCode[extraCode.length - 1] != '}')
 					throw new Error("Expected an extra code argument which is JS code surrounded by curly brackets: {...}");
 			}
+			let currentSelections = this.currentSelection;
+			var chosenSelection = currentSelections && currentSelections.length > 0 ? currentSelections[0] : null;
 			let content = '';
 			try {
 				content = await this.app.vault.adapter.read(fileName);
 			} catch (e) {
 				throw new Error(`Cannot read file ${params.args[0]} from vault root: ${e.message}`);
 			}
-			let currentSelections = this.currentSelection;
-			var chosenSelection = currentSelections && currentSelections.length > 0 ? currentSelections[0] : null;
 			const command = Function('editor', 'view', 'selection', content + extraCode);
 			const view = this.getActiveView();
 			command(view.editor, view, chosenSelection);

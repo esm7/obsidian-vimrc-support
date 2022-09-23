@@ -113,15 +113,16 @@ export default class VimrcPlugin extends Plugin {
 
 	async updateSelectionEvent() {
 		const view = this.getActiveView();
-		if (!view) return
+		if (!view) return;
 
 		let cm = this.getCodeMirror(view);
 		if (
 			this.getCursorActivityHandlers(cm).some(
 				(e: { name: string }) => e.name === "updateSelection")
-		) return
+		) return;
 		cm.on("cursorActivity", async (cm: CodeMirror.Editor) => this.updateSelection(cm));
 	}
+
 	async updateSelection(cm: any) {
 		this.currentSelection = cm.listSelections();
 	}

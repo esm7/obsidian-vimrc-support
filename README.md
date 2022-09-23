@@ -257,6 +257,10 @@ See [here](JsSnippets.md) for the full example, and please contribute your own!
 
 ## Changelog
 
+### 0.7.3
+
+Fixed an issue in updating the last selection variable, leading to `jsFile` receiving an incorrect argument and (thanks @zjhcn!)
+
 ### 0.7.2
 
 Fixed the plugin breaking for some users after Obsidian's recent updates, plus some optimizations.

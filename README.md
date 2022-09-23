@@ -41,7 +41,7 @@ nmap <C-i> :forward
 ## Supported Commands
 
 The commands that can be used are whatever CodeMirror supports.
-I couldn't find a formal list anywhere but you can look for `defaultExCommandMap` in [the source code](https://github.com/codemirror/CodeMirror/blob/master/keymap/vim.js), or play around with trying commands in Obsidian's Vim mode.
+I couldn't find a formal list anywhere but you can look for `defaultExCommandMap` in [the source code](https://github.com/replit/codemirror-vim/blob/master/src/vim.js), or play around with trying commands in Obsidian's Vim mode.
 
 In addition to that:
 - The plugin skips blank lines and lines starting with Vimscript comments (`" ...`).

@@ -33,6 +33,9 @@ const mappingCommands: String[] = [
 	"map",
 	"nmap",
 	"noremap",
+	"iunmap",
+	"nunmap",
+	"vunmap",
 ]
 
 function sleep(ms: number) {
@@ -267,6 +270,18 @@ export default class VimrcPlugin extends Plugin {
 		vimObject.defineEx('iunmap', '', (cm: any, params: any) => {
 			if (params.argString.trim()) {
 				this.codeMirrorVimObject.unmap(params.argString.trim(), 'insert');
+			}
+		});
+
+		vimObject.defineEx('nunmap', '', (cm: any, params: any) => {
+			if (params.argString.trim()) {
+				this.codeMirrorVimObject.unmap(params.argString.trim(), 'normal');
+			}
+		});
+
+		vimObject.defineEx('vunmap', '', (cm: any, params: any) => {
+			if (params.argString.trim()) {
+				this.codeMirrorVimObject.unmap(params.argString.trim(), 'visual');
 			}
 		});
 

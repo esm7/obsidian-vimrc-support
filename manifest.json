@@ -6,5 +6,5 @@
   "minAppVersion": "0.15.3",
   "author": "esm",
   "authorUrl": "",
-  "isDesktopOnly": true
+  "isDesktopOnly": false
 }

@@ -129,22 +129,45 @@ Note how `exmap` lists command names without colons and in `nmap` the colon is r
 ## Surround Text with `surround`
 
 The plugin defines a custom Ex command named `surround` to surround either your currently selected text in visual mode or the word your cursor is over in normal mode with text.
-This is particularly useful for creating wikilinks in Obsidian `[[WikiLink]]`.
+This is useful for Vim users who are used to the `vim-surround` plugin.
 
 The syntax follows `:surround [prefixText] [postfixText]`.
 
 Some examples:
+
 - `surround ( )`
+- `surround " "`
 - `surround [[ ]]`
 
-Here's my surround config as an example:
+Here's an example config that implements many of the features from vim-surround:
 
 ```
-" Surround text with [[ ]] to make a wikilink
+exmap surround_wiki surround [[ ]]
+exmap surround_double_quotes surround " "
+exmap surround_single_quotes surround ' '
+exmap surround_brackets surround ( )
+exmap surround_square_brackets surround [ ]
+exmap surround_curly_brackets surround { }
+
 " NOTE: must use 'map' and not 'nmap'
-exmap wiki surround [[ ]]
-map [[ :wiki
+map [[ :surround_wiki
+nunmap s
+vunmap s
+map s" :surround_double_quotes
+map s' :surround_single_quotes
+map sb :surround_brackets
+map s( :surround_brackets
+map s) :surround_brackets
+map s[ :surround_square_brackets
+map s[ :surround_square_brackets
+map s{ :surround_curly_brackets
+map s} :surround_curly_brackets
 ```
+
+Usage:
+
+1. Select some text in visual mode, then press `s` and then the desired surround character. e.g. `s"` to surround the selected text with double quotes.
+2. Place your cursor over a word in normal mode, then press `s` and then the desired surround character. e.g. `s"` to surround the word with double quotes.
 
 ## Inserting Links/Hyperlinks with `pasteinto`
 

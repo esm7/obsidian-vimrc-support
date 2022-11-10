@@ -49,7 +49,12 @@ In addition to that:
 - The plugin skips blank lines and lines starting with Vimscript comments (`" ...`).
 - Special support for yanking to system clipboard can be activated by `set clipboard=unnamed` (`unnamedplus` will do the same thing).
 - Support for the `tabstop` Vim option (e.g. `set tabstop=4`).
-- Custom mapping/unmapping commands in addition to the defaults: `noremap` and `iunmap` (PRs are welcome to implement more :) )
+- Custom mapping/unmapping commands in addition to the defaults:
+  - `noremap`
+  - `iunmap`
+  - `nunmap`
+  - `vunmap`
+  - PRs are welcome to implement more :)
 - `exmap [commandName] [command...]`: a command to map Ex commands. This should basically be supported in regular `:map`, but doesn't work with multi-argument commands due to a CodeMirror bug, so this is a workaround.
 - `obcommand` - execute Obsidian commands, see more details below.
 - `cmcommand` - execute arbitrary CodeMirror commands, see details below.
@@ -281,6 +286,11 @@ See [here](JsSnippets.md) for the full example, and please contribute your own!
 
 
 ## Changelog
+
+### 0.8.0
+
+- The plugin is now marked as supporting mobile; thanks @Geniucker for taking this step, testing and documenting it!
+- Implemented `nunmap` and `vunmap`, which allow really nice `surround` implementation (see README). Thanks @dohsimpson!
 
 ### 0.7.3
 

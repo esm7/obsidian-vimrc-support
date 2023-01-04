@@ -243,19 +243,9 @@ export default class VimrcPlugin extends Plugin {
 				this.defineSurround(this.codeMirrorVimObject);
 				this.defineJsCommand(this.codeMirrorVimObject);
 				this.defineJsFile(this.codeMirrorVimObject);
+				this.defineSource(this.codeMirrorVimObject);
 
-				vimCommands.split("\n").forEach(
-					function (line: string, index: number, arr: [string]) {
-						if (line.trim().length > 0 && line.trim()[0] != '"') {
-							let split = line.split(" ")
-							if (mappingCommands.includes(split[0])) {
-								// Have to do this because "vim-command-done" event doesn't actually work properly, or something.
-								this.customVimKeybinds[split[1]] = true
-							}
-							this.codeMirrorVimObject.handleEx(cmEditor, line);
-						}
-					}.bind(this) // Faster than an arrow function. https://stackoverflow.com/questions/50375440/binding-vs-arrow-function-for-react-onclick-event
-				)
+        this.loadVimCommands(vimCommands);
 
 				this.prepareChordDisplay();
 				this.prepareVimModeDisplay();
@@ -272,6 +262,26 @@ export default class VimrcPlugin extends Plugin {
 				cmEditor.off('keydown', this.onKeydown);
 				cmEditor.on('keydown', this.onKeydown);
 			}
+		}
+	}
+
+	loadVimCommands(vimCommands: string) {
+		let view = this.getActiveView();
+		if (view) {
+			var cmEditor = this.getCodeMirror(view);
+
+			vimCommands.split("\n").forEach(
+				function (line: string, index: number, arr: [string]) {
+					if (line.trim().length > 0 && line.trim()[0] != '"') {
+						let split = line.split(" ")
+						if (mappingCommands.includes(split[0])) {
+							// Have to do this because "vim-command-done" event doesn't actually work properly, or something.
+							this.customVimKeybinds[split[1]] = true
+						}
+						this.codeMirrorVimObject.handleEx(cmEditor, line);
+					}
+				}.bind(this) // Faster than an arrow function. https://stackoverflow.com/questions/50375440/binding-vs-arrow-function-for-react-onclick-event
+			)
 		}
 	}
 
@@ -629,6 +639,21 @@ export default class VimrcPlugin extends Plugin {
 			const command = Function('editor', 'view', 'selection', content + extraCode);
 			const view = this.getActiveView();
 			command(view.editor, view, chosenSelection);
+		});
+	}
+
+	defineSource(vimObject: any) {
+		vimObject.defineEx('source', '', async (cm: any, params: any) => {
+			console.log(params);
+			const fileName = params.argString.trim();
+			let vimrcContent = '';
+			try {
+				this.app.vault.adapter.read(fileName).then(vimrcContent => {
+					this.loadVimCommands(vimrcContent);
+				});
+			} catch (e) {
+				console.log('Error loading vimrc file', fileName, 'from the vault root', e.message)
+			}
 		});
 	}
 

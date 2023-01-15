@@ -139,27 +139,27 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 	async updateVimEvents() {
-			let view = this.getActiveView();
-			if (view) {
-				const cmEditor = this.getCodeMirror(view);
+		let view = this.getActiveView();
+		if (view) {
+			const cmEditor = this.getCodeMirror(view);
 
-				// See https://codemirror.net/doc/manual.html#vimapi_events for events.
-				this.isInsertMode = false;
-				this.currentVimStatus = vimStatus.normal;
-				if (this.settings.displayVimMode)
-					this.vimStatusBar?.setText(this.currentVimStatus);
+			// See https://codemirror.net/doc/manual.html#vimapi_events for events.
+			this.isInsertMode = false;
+			this.currentVimStatus = vimStatus.normal;
+			if (this.settings.displayVimMode)
+				this.vimStatusBar?.setText(this.currentVimStatus);
 
-				cmEditor.off('vim-mode-change', this.logVimModeChange);
-				cmEditor.on('vim-mode-change', this.logVimModeChange);
+			cmEditor.off('vim-mode-change', this.logVimModeChange);
+			cmEditor.on('vim-mode-change', this.logVimModeChange);
 
-				this.currentKeyChord = [];
-				cmEditor.off('vim-keypress', this.onVimKeypress);
-				cmEditor.on('vim-keypress', this.onVimKeypress);
-				cmEditor.off('vim-command-done', this.onVimCommandDone);
-				cmEditor.on('vim-command-done', this.onVimCommandDone);
-				cmEditor.off('keydown', this.onKeydown);
-				cmEditor.on('keydown', this.onKeydown);
-			}
+			this.currentKeyChord = [];
+			cmEditor.off('vim-keypress', this.onVimKeypress);
+			cmEditor.on('vim-keypress', this.onVimKeypress);
+			cmEditor.off('vim-command-done', this.onVimCommandDone);
+			cmEditor.on('vim-command-done', this.onVimCommandDone);
+			CodeMirror.off(cmEditor.getInputField(), 'keydown', this.onKeydown);
+			CodeMirror.on(cmEditor.getInputField(), 'keydown', this.onKeydown);
+		}
 	}
 
 	async onload() {
@@ -259,8 +259,8 @@ export default class VimrcPlugin extends Plugin {
 			if (cmEditor) {
 				cmEditor.off('vim-mode-change', this.logVimModeChange);
 				cmEditor.on('vim-mode-change', this.logVimModeChange);
-				cmEditor.off('keydown', this.onKeydown);
-				cmEditor.on('keydown', this.onKeydown);
+				CodeMirror.off(cmEditor.getInputField(), 'keydown', this.onKeydown);
+				CodeMirror.on(cmEditor.getInputField(), 'keydown', this.onKeydown);
 			}
 		}
 	}
@@ -572,11 +572,11 @@ export default class VimrcPlugin extends Plugin {
 		if (tempS != "") {
 			tempS += "-";
 		}
-		this.vimChordStatusBar.setText(tempS);
+		this.vimChordStatusBar?.setText(tempS);
 	}
 
 	onVimCommandDone = async (reason: any) => {
-		this.vimChordStatusBar.setText("");
+		this.vimChordStatusBar?.setText("");
 		this.currentKeyChord = [];
 	}
 
@@ -587,12 +587,18 @@ export default class VimrcPlugin extends Plugin {
 		}
 	}
 
-	onKeydown = (instance: CodeMirror.Editor, ev: KeyboardEvent) => {
+	onKeydown = (ev: KeyboardEvent) => {
 		if (this.settings.fixedNormalModeLayout) {
 			const keyMap = this.settings.capturedKeyboardMap;
 			if (!this.isInsertMode && !ev.shiftKey &&
 				ev.code in keyMap && ev.key != keyMap[ev.code]) {
-				this.codeMirrorVimObject.handleKey(instance, keyMap[ev.code], 'mapping');
+				let view = this.getActiveView();
+				if (view) {
+					const cmEditor = this.getCodeMirror(view);
+					if (cmEditor) {
+						this.codeMirrorVimObject.handleKey(cmEditor, keyMap[ev.code], 'mapping');
+					}
+				}
 			ev.preventDefault();
 			return false;
 			}

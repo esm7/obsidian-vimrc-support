@@ -93,10 +93,14 @@ export default class VimrcPlugin extends Plugin {
 		// this don't trigger on loading/reloading obsidian with note opened
 		this.app.workspace.on("active-leaf-change", async () => {
 			this.updateSelectionEvent();
+
+			this.updateVimEvents();
 		});
 		// and this don't trigger on opening same file in new pane
 		this.app.workspace.on("file-open", async () => {
 			this.updateSelectionEvent();
+
+			this.updateVimEvents();
 		});
 
 		this.initialized = true;
@@ -134,6 +138,30 @@ export default class VimrcPlugin extends Plugin {
 		return (cm as any)._handlers.cursorActivity;
 	}
 
+	async updateVimEvents() {
+		let view = this.getActiveView();
+		if (view) {
+			const cmEditor = this.getCodeMirror(view);
+
+			// See https://codemirror.net/doc/manual.html#vimapi_events for events.
+			this.isInsertMode = false;
+			this.currentVimStatus = vimStatus.normal;
+			if (this.settings.displayVimMode)
+				this.vimStatusBar?.setText(this.currentVimStatus);
+
+			cmEditor.off('vim-mode-change', this.logVimModeChange);
+			cmEditor.on('vim-mode-change', this.logVimModeChange);
+
+			this.currentKeyChord = [];
+			cmEditor.off('vim-keypress', this.onVimKeypress);
+			cmEditor.on('vim-keypress', this.onVimKeypress);
+			cmEditor.off('vim-command-done', this.onVimCommandDone);
+			cmEditor.on('vim-command-done', this.onVimCommandDone);
+			CodeMirror.off(cmEditor.getInputField(), 'keydown', this.onKeydown);
+			CodeMirror.on(cmEditor.getInputField(), 'keydown', this.onKeydown);
+		}
+	}
+
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(new SettingsTab(this.app, this))
@@ -154,7 +182,7 @@ export default class VimrcPlugin extends Plugin {
 			try {
 				vimrcContent = await this.app.vault.adapter.read(fileName);
 			} catch (e) {
-				console.log('Error loading vimrc file', fileName, 'from the vault root', e.message) 
+				console.log('Error loading vimrc file', fileName, 'from the vault root', e.message)
 			}
 			this.readVimInit(vimrcContent);
 		});
@@ -169,9 +197,10 @@ export default class VimrcPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	logVimModeChange(modeObj: any) {
-		this.isInsertMode = modeObj.mode === 'insert';
-		switch (modeObj.mode) {
+	logVimModeChange = async (cm: any) => {
+		if (!cm) return;
+		this.isInsertMode = cm.mode === 'insert';
+		switch (cm.mode) {
 			case "insert":
 				this.currentVimStatus = vimStatus.insert;
 				break;
@@ -188,7 +217,7 @@ export default class VimrcPlugin extends Plugin {
 				break;
 		}
 		if (this.settings.displayVimMode)
-			this.vimStatusBar.setText(this.currentVimStatus);
+			this.vimStatusBar?.setText(this.currentVimStatus);
 	}
 
 	onunload() {
@@ -214,19 +243,9 @@ export default class VimrcPlugin extends Plugin {
 				this.defineSurround(this.codeMirrorVimObject);
 				this.defineJsCommand(this.codeMirrorVimObject);
 				this.defineJsFile(this.codeMirrorVimObject);
+				this.defineSource(this.codeMirrorVimObject);
 
-				vimCommands.split("\n").forEach(
-					function (line: string, index: number, arr: [string]) {
-						if (line.trim().length > 0 && line.trim()[0] != '"') {
-							let split = line.split(" ")
-							if (mappingCommands.includes(split[0])) {
-								// Have to do this because "vim-command-done" event doesn't actually work properly, or something.
-								this.customVimKeybinds[split[1]] = true
-							}
-							this.codeMirrorVimObject.handleEx(cmEditor, line);
-						}
-					}.bind(this) // Faster than an arrow function. https://stackoverflow.com/questions/50375440/binding-vs-arrow-function-for-react-onclick-event
-				)
+        this.loadVimCommands(vimCommands);
 
 				this.prepareChordDisplay();
 				this.prepareVimModeDisplay();
@@ -238,12 +257,31 @@ export default class VimrcPlugin extends Plugin {
 			}
 
 			if (cmEditor) {
-				cmEditor.on('vim-mode-change', (modeObj: any) => {
-					if (modeObj)
-						this.logVimModeChange(modeObj);
-				});
-				this.defineFixedLayout(cmEditor);
+				cmEditor.off('vim-mode-change', this.logVimModeChange);
+				cmEditor.on('vim-mode-change', this.logVimModeChange);
+				CodeMirror.off(cmEditor.getInputField(), 'keydown', this.onKeydown);
+				CodeMirror.on(cmEditor.getInputField(), 'keydown', this.onKeydown);
 			}
+		}
+	}
+
+	loadVimCommands(vimCommands: string) {
+		let view = this.getActiveView();
+		if (view) {
+			var cmEditor = this.getCodeMirror(view);
+
+			vimCommands.split("\n").forEach(
+				function (line: string, index: number, arr: [string]) {
+					if (line.trim().length > 0 && line.trim()[0] != '"') {
+						let split = line.split(" ")
+						if (mappingCommands.includes(split[0])) {
+							// Have to do this because "vim-command-done" event doesn't actually work properly, or something.
+							this.customVimKeybinds[split[1]] = true
+						}
+						this.codeMirrorVimObject.handleEx(cmEditor, line);
+					}
+				}.bind(this) // Faster than an arrow function. https://stackoverflow.com/questions/50375440/binding-vs-arrow-function-for-react-onclick-event
+			)
 		}
 	}
 
@@ -385,7 +423,7 @@ export default class VimrcPlugin extends Plugin {
 			if (newArgs.length != 2) {
 				throw new Error("surround requires exactly 2 parameters: prefix and postfix text.");
 			}
-			
+
 			let beginning = newArgs[0].replace("\\\\", "\\").replace("\\ ", " "); // Get the beginning surround text
 			let ending = newArgs[1].replace("\\\\", "\\").replace("\\ ", " "); // Get the ending surround text
 
@@ -509,31 +547,37 @@ export default class VimrcPlugin extends Plugin {
 
 			let cmEditor = this.getCodeMirror(this.getActiveView());
 			// See https://codemirror.net/doc/manual.html#vimapi_events for events.
-			CodeMirror.on(cmEditor, "vim-keypress", async (vimKey: any) => {
-				if (vimKey != "<Esc>") { // TODO figure out what to actually look for to exit commands.
-					this.currentKeyChord.push(vimKey);
-					if (this.customVimKeybinds[this.currentKeyChord.join("")] != undefined) { // Custom key chord exists.
-						this.currentKeyChord = [];
-					}
-				} else {
-					this.currentKeyChord = [];
-				}
-
-				// Build keychord text
-				let tempS = "";
-				for (const s of this.currentKeyChord) {
-					tempS += " " + s;
-				}
-				if (tempS != "") {
-					tempS += "-";
-				}
-				this.vimChordStatusBar.setText(tempS);
-			});
-			CodeMirror.on(cmEditor, "vim-command-done", async (reason: any) => { // Reset display
-				this.vimChordStatusBar.setText("");
-				this.currentKeyChord = [];
-			});
+			cmEditor.off('vim-keypress', this.onVimKeypress);
+			cmEditor.on('vim-keypress', this.onVimKeypress);
+			cmEditor.off('vim-command-done', this.onVimCommandDone);
+			cmEditor.on('vim-command-done', this.onVimCommandDone);
 		}
+	}
+
+	onVimKeypress = async (vimKey: any) => {
+		if (vimKey != "<Esc>") { // TODO figure out what to actually look for to exit commands.
+			this.currentKeyChord.push(vimKey);
+			if (this.customVimKeybinds[this.currentKeyChord.join("")] != undefined) { // Custom key chord exists.
+				this.currentKeyChord = [];
+			}
+		} else {
+			this.currentKeyChord = [];
+		}
+
+		// Build keychord text
+		let tempS = "";
+		for (const s of this.currentKeyChord) {
+			tempS += " " + s;
+		}
+		if (tempS != "") {
+			tempS += "-";
+		}
+		this.vimChordStatusBar?.setText(tempS);
+	}
+
+	onVimCommandDone = async (reason: any) => {
+		this.vimChordStatusBar?.setText("");
+		this.currentKeyChord = [];
 	}
 
 	prepareVimModeDisplay() {
@@ -543,18 +587,22 @@ export default class VimrcPlugin extends Plugin {
 		}
 	}
 
-	defineFixedLayout(cm: CodeMirror.Editor) {
-		cm.on('keydown', (instance: CodeMirror.Editor, ev: KeyboardEvent) => {
-			if (this.settings.fixedNormalModeLayout) {
-				const keyMap = this.settings.capturedKeyboardMap;
-				if (!this.isInsertMode && !ev.shiftKey &&
-					ev.code in keyMap && ev.key != keyMap[ev.code]) {
-					this.codeMirrorVimObject.handleKey(instance, keyMap[ev.code], 'mapping');
-					ev.preventDefault();
-					return false;
+	onKeydown = (ev: KeyboardEvent) => {
+		if (this.settings.fixedNormalModeLayout) {
+			const keyMap = this.settings.capturedKeyboardMap;
+			if (!this.isInsertMode && !ev.shiftKey &&
+				ev.code in keyMap && ev.key != keyMap[ev.code]) {
+				let view = this.getActiveView();
+				if (view) {
+					const cmEditor = this.getCodeMirror(view);
+					if (cmEditor) {
+						this.codeMirrorVimObject.handleKey(cmEditor, keyMap[ev.code], 'mapping');
+					}
 				}
+			ev.preventDefault();
+			return false;
 			}
-		});
+		}
 	}
 
 	defineJsCommand(vimObject: any) {
@@ -597,6 +645,21 @@ export default class VimrcPlugin extends Plugin {
 			const command = Function('editor', 'view', 'selection', content + extraCode);
 			const view = this.getActiveView();
 			command(view.editor, view, chosenSelection);
+		});
+	}
+
+	defineSource(vimObject: any) {
+		vimObject.defineEx('source', '', async (cm: any, params: any) => {
+			console.log(params);
+			const fileName = params.argString.trim();
+			let vimrcContent = '';
+			try {
+				this.app.vault.adapter.read(fileName).then(vimrcContent => {
+					this.loadVimCommands(vimrcContent);
+				});
+			} catch (e) {
+				console.log('Error loading vimrc file', fileName, 'from the vault root', e.message)
+			}
 		});
 	}
 

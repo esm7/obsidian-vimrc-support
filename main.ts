@@ -650,9 +650,9 @@ export default class VimrcPlugin extends Plugin {
 
 	defineSource(vimObject: any) {
 		vimObject.defineEx('source', '', async (cm: any, params: any) => {
-			console.log(params);
+			if (params?.args?.length > 1)
+				throw new Error("Expected format: source [fileName]");
 			const fileName = params.argString.trim();
-			let vimrcContent = '';
 			try {
 				this.app.vault.adapter.read(fileName).then(vimrcContent => {
 					this.loadVimCommands(vimrcContent);

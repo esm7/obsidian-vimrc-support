@@ -61,6 +61,7 @@ In addition to that:
 - `surround` - surround your selected text in visual mode or word in normal mode with text.
 - `pasteinto` - paste your current clipboard into your selected text in visual mode or word in normal mode. Useful for creating hyperlinks.
 - `jscommand` and `jsfile` - extend Vim mode using JavaScript snippets.
+- `source` - loads Vim commands from a file (relative to the vault root).
 
 Commands that fail don't generate any visible error for now.
 
@@ -219,8 +220,6 @@ nmap gT :tabprev
 
 ## Fixed Keyboard Layout in Normal Mode
 
-**Note:** this is currently unsupported for the new (CM6-based) editor.
-
 In many languages and keyboard layouts it becomes problematic or plain impossible to use Vim keys.
 The Vim keys are located in different positions on some keyboard layouts, which could be confusing when switching
 layouts, and on some layouts (e.g. non-Western languages) the keys for Vim movements just don't exist.
@@ -286,6 +285,14 @@ See [here](JsSnippets.md) for the full example, and please contribute your own!
 
 
 ## Changelog
+
+### 0.9.0
+
+Multiple fixes and improvements, all contributed by @jiyee - thank you!
+
+- Fixed chord and Vim mode display issues (https://github.com/esm7/obsidian-vimrc-support/issues/149).
+- Added `source` command (https://github.com/esm7/obsidian-vimrc-support/issues/157)
+- Fixed Normal Mode Layout is back!
 
 ### 0.8.0
 

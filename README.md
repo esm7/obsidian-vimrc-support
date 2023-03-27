@@ -283,6 +283,17 @@ nmap [[ :prevHeading
 
 See [here](JsSnippets.md) for the full example, and please contribute your own!
 
+### Custom Styles for Status Bar
+
+You may utilize the following CSS class names to add styles to the status bar prompt
+(e.g. assign colors for different status).
+
+| Mode    | Class Name                                     |
+| ------- | ---------------------------------------------- |
+| normal  | `plugin-obsidian-vimrc-support-prompt-normal`  |
+| insert  | `plugin-obsidian-vimrc-support-prompt-insert`  |
+| visual  | `plugin-obsidian-vimrc-support-prompt-visual`  |
+| replace | `plugin-obsidian-vimrc-support-prompt-replace` |
 
 ## Changelog
 

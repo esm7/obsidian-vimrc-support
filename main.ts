@@ -39,6 +39,13 @@ const DEFAULT_SETTINGS: Settings = {
   },
 }
 
+const vimStatusPromptClassNameMap = {
+  normal: 'plugin-obsidian-vimrc-support-prompt-normal',
+  insert: 'plugin-obsidian-vimrc-support-prompt-insert',
+  visual: 'plugin-obsidian-vimrc-support-prompt-visual',
+  replace: 'plugin-obsidian-vimrc-support-prompt-replace',
+}
+
 // NOTE: to future maintainers, please make sure all mapping commands are included in this array.
 const mappingCommands: String[] = [
 	"map",
@@ -66,9 +73,23 @@ export default class VimrcPlugin extends Plugin {
 	private vimChordStatusBar: HTMLElement = null;
 	private vimStatusBar: HTMLElement = null;
 	private currentVimStatus: vimStatus = vimStatus.normal;
+  private currentVimStatusClassName: string = 
+    vimStatusPromptClassNameMap[vimStatus.normal];
 	private customVimKeybinds: { [name: string]: boolean } = {};
 	private currentSelection: [EditorSelection] = null;
 	private isInsertMode: boolean = false;
+
+  updateVimStatusBar() {
+    this.vimStatusBar?.setText(
+      this.settings.vimStatusPromptMap[this.currentVimStatus]
+    );
+    this.vimStatusBar?.classList.replace(
+      this.currentVimStatusClassName,
+      vimStatusPromptClassNameMap[this.currentVimStatus]
+    );
+    this.currentVimStatusClassName = 
+      vimStatusPromptClassNameMap[this.currentVimStatus];
+  }
 
 	async captureKeyboardLayout() {
 		// This is experimental API and it might break at some point:
@@ -158,10 +179,7 @@ export default class VimrcPlugin extends Plugin {
 			this.isInsertMode = false;
 			this.currentVimStatus = vimStatus.normal;
 			if (this.settings.displayVimMode)
-        this.vimStatusBar?.setText(
-          this.settings.vimStatusPromptMap[this.currentVimStatus]
-        );
-
+        this.updateVimStatusBar();
 			cmEditor.off('vim-mode-change', this.logVimModeChange);
 			cmEditor.on('vim-mode-change', this.logVimModeChange);
 
@@ -230,9 +248,7 @@ export default class VimrcPlugin extends Plugin {
 				break;
 		}
 		if (this.settings.displayVimMode)
-      this.vimStatusBar?.setText(
-        this.settings.vimStatusPromptMap[this.currentVimStatus]
-      );
+      this.updateVimStatusBar();
 	}
 
 	onunload() {
@@ -601,6 +617,9 @@ export default class VimrcPlugin extends Plugin {
       this.vimStatusBar.setText(
         this.settings.vimStatusPromptMap[vimStatus.normal]
       ); // Init the vimStatusBar with normal mode
+      this.vimStatusBar?.addClass(
+        vimStatusPromptClassNameMap[vimStatus.normal]
+      ); // Add the initial class name for normal mode
 		}
 	}
 

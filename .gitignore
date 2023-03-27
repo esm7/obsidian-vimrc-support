@@ -15,3 +15,5 @@ main.js
 data.json
 
 obsidian.d.ts
+
+.DS_Store

@@ -793,7 +793,8 @@ class SettingsTab extends PluginSettingTab {
 						DEFAULT_SETTINGS.vimStatusPromptMap.normal
 				);
 				text.onChange((value) => {
-					this.plugin.settings.vimStatusPromptMap.normal = value;
+					this.plugin.settings.vimStatusPromptMap.normal = value ||
+						DEFAULT_SETTINGS.vimStatusPromptMap.normal;
 					this.plugin.saveSettings();
 				});
 			});
@@ -808,7 +809,9 @@ class SettingsTab extends PluginSettingTab {
 						DEFAULT_SETTINGS.vimStatusPromptMap.insert
 				);
 				text.onChange((value) => {
-					this.plugin.settings.vimStatusPromptMap.insert = value;
+					this.plugin.settings.vimStatusPromptMap.insert = value ||
+						DEFAULT_SETTINGS.vimStatusPromptMap.insert;
+					console.log(this.plugin.settings.vimStatusPromptMap);
 					this.plugin.saveSettings();
 				});
 			});
@@ -823,7 +826,8 @@ class SettingsTab extends PluginSettingTab {
 						DEFAULT_SETTINGS.vimStatusPromptMap.visual
 				);
 				text.onChange((value) => {
-					this.plugin.settings.vimStatusPromptMap.visual = value;
+					this.plugin.settings.vimStatusPromptMap.visual = value ||
+						DEFAULT_SETTINGS.vimStatusPromptMap.visual;
 					this.plugin.saveSettings();
 				});
 			});
@@ -838,7 +842,8 @@ class SettingsTab extends PluginSettingTab {
 						DEFAULT_SETTINGS.vimStatusPromptMap.replace
 				);
 				text.onChange((value) => {
-					this.plugin.settings.vimStatusPromptMap.replace = value;
+					this.plugin.settings.vimStatusPromptMap.replace = value ||
+						DEFAULT_SETTINGS.vimStatusPromptMap.replace;
 					this.plugin.saveSettings();
 				});
 			});

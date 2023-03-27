@@ -781,6 +781,8 @@ class SettingsTab extends PluginSettingTab {
 				})
 			});
 
+		containerEl.createEl('hr');
+
 		new Setting(containerEl)
 			.setName('Normal mode prompt')
 			.setDesc('Set the status prompt text for normal mode.')

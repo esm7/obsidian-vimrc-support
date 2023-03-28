@@ -22,6 +22,7 @@ interface Settings {
 	capturedKeyboardMap: Record<string, string>,
 	supportJsCommands?: boolean
 	vimStatusPromptMap: VimStatusPromptMap;
+	vimModeStatusBarCSSClass: boolean;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -37,6 +38,7 @@ const DEFAULT_SETTINGS: Settings = {
 		visual: '🟡',
 		replace: '🔴',
 	},
+	vimModeStatusBarCSSClass: false,
 }
 
 const vimStatusPromptClassNameMap = {
@@ -83,6 +85,12 @@ export default class VimrcPlugin extends Plugin {
 		this.vimStatusBar?.setText(
 			this.settings.vimStatusPromptMap[this.currentVimStatus]
 		);
+		if (this.settings.vimModeStatusBarCSSClass) {
+			document.querySelector('div.status-bar')?.classList.replace(
+				this.currentVimStatusClassName,
+				vimStatusPromptClassNameMap[this.currentVimStatus]
+			);
+		}
 		this.vimStatusBar?.classList.replace(
 			this.currentVimStatusClassName,
 			vimStatusPromptClassNameMap[this.currentVimStatus]
@@ -617,6 +625,11 @@ export default class VimrcPlugin extends Plugin {
 			this.vimStatusBar.setText(
 				this.settings.vimStatusPromptMap[vimStatus.normal]
 			); // Init the vimStatusBar with normal mode
+			if (this.settings.vimModeStatusBarCSSClass) {
+				document.querySelector('div.status-bar')?.addClass(
+					vimStatusPromptClassNameMap[vimStatus.normal]
+				);
+			}
 			this.vimStatusBar?.addClass(
 				vimStatusPromptClassNameMap[vimStatus.normal]
 			); // Add the initial class name for normal mode
@@ -782,6 +795,23 @@ class SettingsTab extends PluginSettingTab {
 			});
 
 		containerEl.createEl('hr');
+
+		new Setting(containerEl)
+			.setName('Add Vim mode class to status bar')
+			.setDesc(
+				'Also add corresponding CSS class to status bar when Vim mode changes. ' +
+				'This allows powerline-ish styling on the whole status bar (requires restart).'
+			)
+			.addToggle(toggle => {
+				toggle.setValue(
+					this.plugin.settings.vimModeStatusBarCSSClass ??
+					DEFAULT_SETTINGS.vimModeStatusBarCSSClass
+				);
+				toggle.onChange(value => {
+					this.plugin.settings.vimModeStatusBarCSSClass = value;
+					this.plugin.saveSettings();
+				})
+			});
 
 		new Setting(containerEl)
 			.setName('Normal mode prompt')

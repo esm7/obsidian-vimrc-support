@@ -291,6 +291,7 @@ also toggle the setting in settings page to also apply the display prompt class 
 entire status bar container if you want some customizations on it.
 
 The display prompt class: `vimrc-support-vim-mode`
+
 The `data-vim-mode` values:
 
 | Mode    | Data Value (`data-vim-mode`) |

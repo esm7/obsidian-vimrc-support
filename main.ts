@@ -41,12 +41,7 @@ const DEFAULT_SETTINGS: Settings = {
 	vimModeStatusBarCSSClass: false,
 }
 
-const vimStatusPromptClassNameMap = {
-	normal: 'plugin-obsidian-vimrc-support-prompt-normal',
-	insert: 'plugin-obsidian-vimrc-support-prompt-insert',
-	visual: 'plugin-obsidian-vimrc-support-prompt-visual',
-	replace: 'plugin-obsidian-vimrc-support-prompt-replace',
-}
+const vimStatusPromptClass = "vimrc-support-vim-mode";
 
 // NOTE: to future maintainers, please make sure all mapping commands are included in this array.
 const mappingCommands: String[] = [
@@ -75,8 +70,6 @@ export default class VimrcPlugin extends Plugin {
 	private vimChordStatusBar: HTMLElement = null;
 	private vimStatusBar: HTMLElement = null;
 	private currentVimStatus: vimStatus = vimStatus.normal;
-	private currentVimStatusClassName: string = 
-		vimStatusPromptClassNameMap[vimStatus.normal];
 	private customVimKeybinds: { [name: string]: boolean } = {};
 	private currentSelection: [EditorSelection] = null;
 	private isInsertMode: boolean = false;
@@ -86,17 +79,13 @@ export default class VimrcPlugin extends Plugin {
 			this.settings.vimStatusPromptMap[this.currentVimStatus]
 		);
 		if (this.settings.vimModeStatusBarCSSClass) {
-			document.querySelector('div.status-bar')?.classList.replace(
-				this.currentVimStatusClassName,
-				vimStatusPromptClassNameMap[this.currentVimStatus]
-			);
+			// When the setting is on, we also update vim status for the status bar
+			// container element.
+			(
+				document.querySelector("div.status-bar") as HTMLElement
+			).dataset.vimMode = this.currentVimStatus;
 		}
-		this.vimStatusBar?.classList.replace(
-			this.currentVimStatusClassName,
-			vimStatusPromptClassNameMap[this.currentVimStatus]
-		);
-		this.currentVimStatusClassName = 
-			vimStatusPromptClassNameMap[this.currentVimStatus];
+		this.vimStatusBar.dataset.vimMode = this.currentVimStatus;
 	}
 
 	async captureKeyboardLayout() {
@@ -626,13 +615,11 @@ export default class VimrcPlugin extends Plugin {
 				this.settings.vimStatusPromptMap[vimStatus.normal]
 			); // Init the vimStatusBar with normal mode
 			if (this.settings.vimModeStatusBarCSSClass) {
-				document.querySelector('div.status-bar')?.addClass(
-					vimStatusPromptClassNameMap[vimStatus.normal]
-				);
+				// When the setting is on, we also add the display prompt class to the
+				// status bar container element.
+				document.querySelector('div.status-bar').addClass(vimStatusPromptClass);
 			}
-			this.vimStatusBar?.addClass(
-				vimStatusPromptClassNameMap[vimStatus.normal]
-			); // Add the initial class name for normal mode
+			this.vimStatusBar.addClass(vimStatusPromptClass);
 		}
 	}
 

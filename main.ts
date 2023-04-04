@@ -75,7 +75,7 @@ export default class VimrcPlugin extends Plugin {
 	private isInsertMode: boolean = false;
 
 	updateVimStatusBar() {
-		this.vimStatusBar?.setText(
+		this.vimStatusBar.setText(
 			this.settings.vimStatusPromptMap[this.currentVimStatus]
 		);
 		if (this.settings.vimModeStatusBarCSSClass) {
@@ -618,8 +618,12 @@ export default class VimrcPlugin extends Plugin {
 				// When the setting is on, we also add the display prompt class to the
 				// status bar container element.
 				document.querySelector('div.status-bar').addClass(vimStatusPromptClass);
+				(
+					document.querySelector('div.status-bar') as HTMLElement
+				).dataset.vimMode = this.currentVimStatus;
 			}
 			this.vimStatusBar.addClass(vimStatusPromptClass);
+			this.vimStatusBar.dataset.vimMode = this.currentVimStatus;
 		}
 	}
 

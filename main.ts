@@ -785,7 +785,7 @@ class SettingsTab extends PluginSettingTab {
 				})
 			});
 
-		containerEl.createEl('hr');
+		containerEl.createEl('h2', {text: 'Vim Mode Display Prompt'});
 
 		new Setting(containerEl)
 			.setName('Add Vim mode class to status bar')

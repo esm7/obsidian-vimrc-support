@@ -22,7 +22,6 @@ interface Settings {
 	capturedKeyboardMap: Record<string, string>,
 	supportJsCommands?: boolean
 	vimStatusPromptMap: VimStatusPromptMap;
-	vimModeStatusBarCSSClass: boolean;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -38,7 +37,6 @@ const DEFAULT_SETTINGS: Settings = {
 		visual: '🟡',
 		replace: '🔴',
 	},
-	vimModeStatusBarCSSClass: false,
 }
 
 const vimStatusPromptClass = "vimrc-support-vim-mode";
@@ -78,13 +76,6 @@ export default class VimrcPlugin extends Plugin {
 		this.vimStatusBar.setText(
 			this.settings.vimStatusPromptMap[this.currentVimStatus]
 		);
-		if (this.settings.vimModeStatusBarCSSClass) {
-			// When the setting is on, we also update vim status for the status bar
-			// container element.
-			(
-				document.querySelector("div.status-bar") as HTMLElement
-			).dataset.vimMode = this.currentVimStatus;
-		}
 		this.vimStatusBar.dataset.vimMode = this.currentVimStatus;
 	}
 
@@ -614,14 +605,6 @@ export default class VimrcPlugin extends Plugin {
 			this.vimStatusBar.setText(
 				this.settings.vimStatusPromptMap[vimStatus.normal]
 			); // Init the vimStatusBar with normal mode
-			if (this.settings.vimModeStatusBarCSSClass) {
-				// When the setting is on, we also add the display prompt class to the
-				// status bar container element.
-				document.querySelector('div.status-bar').addClass(vimStatusPromptClass);
-				(
-					document.querySelector('div.status-bar') as HTMLElement
-				).dataset.vimMode = this.currentVimStatus;
-			}
 			this.vimStatusBar.addClass(vimStatusPromptClass);
 			this.vimStatusBar.dataset.vimMode = this.currentVimStatus;
 		}
@@ -786,23 +769,6 @@ class SettingsTab extends PluginSettingTab {
 			});
 
 		containerEl.createEl('h2', {text: 'Vim Mode Display Prompt'});
-
-		new Setting(containerEl)
-			.setName('Add Vim mode class to status bar')
-			.setDesc(
-				'Also add corresponding CSS class to status bar when Vim mode changes. ' +
-				'This allows powerline-ish styling on the whole status bar (requires restart).'
-			)
-			.addToggle(toggle => {
-				toggle.setValue(
-					this.plugin.settings.vimModeStatusBarCSSClass ??
-					DEFAULT_SETTINGS.vimModeStatusBarCSSClass
-				);
-				toggle.onChange(value => {
-					this.plugin.settings.vimModeStatusBarCSSClass = value;
-					this.plugin.saveSettings();
-				})
-			});
 
 		new Setting(containerEl)
 			.setName('Normal mode prompt')

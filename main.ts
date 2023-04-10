@@ -3,6 +3,17 @@ import { EditorSelection, Notice, App, MarkdownView, Plugin, PluginSettingTab, S
 
 declare const CodeMirror: any;
 
+const enum vimStatus {
+	normal = 'normal',
+	insert = 'insert',
+	visual = 'visual',
+	replace = 'replace',
+}
+type VimStatusPrompt = string;
+type VimStatusPromptMap = {
+	[status in vimStatus]: VimStatusPrompt;
+};
+
 interface Settings {
 	vimrcFileName: string,
 	displayChord: boolean,
@@ -10,6 +21,7 @@ interface Settings {
 	fixedNormalModeLayout: boolean,
 	capturedKeyboardMap: Record<string, string>,
 	supportJsCommands?: boolean
+	vimStatusPromptMap: VimStatusPromptMap;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -18,15 +30,16 @@ const DEFAULT_SETTINGS: Settings = {
 	displayVimMode: false,
 	fixedNormalModeLayout: false,
 	capturedKeyboardMap: {},
-	supportJsCommands: false
+	supportJsCommands: false,
+	vimStatusPromptMap: {
+		normal: '🟢',
+		insert: '🟠',
+		visual: '🟡',
+		replace: '🔴',
+	},
 }
 
-const enum vimStatus {
-	normal = "🟢",
-	insert = "🟠",
-	replace = "🔴",
-	visual = "🟡"
-}
+const vimStatusPromptClass = "vimrc-support-vim-mode";
 
 // NOTE: to future maintainers, please make sure all mapping commands are included in this array.
 const mappingCommands: String[] = [
@@ -58,6 +71,13 @@ export default class VimrcPlugin extends Plugin {
 	private customVimKeybinds: { [name: string]: boolean } = {};
 	private currentSelection: [EditorSelection] = null;
 	private isInsertMode: boolean = false;
+
+	updateVimStatusBar() {
+		this.vimStatusBar.setText(
+			this.settings.vimStatusPromptMap[this.currentVimStatus]
+		);
+		this.vimStatusBar.dataset.vimMode = this.currentVimStatus;
+	}
 
 	async captureKeyboardLayout() {
 		// This is experimental API and it might break at some point:
@@ -147,8 +167,7 @@ export default class VimrcPlugin extends Plugin {
 			this.isInsertMode = false;
 			this.currentVimStatus = vimStatus.normal;
 			if (this.settings.displayVimMode)
-				this.vimStatusBar?.setText(this.currentVimStatus);
-
+				this.updateVimStatusBar();
 			cmEditor.off('vim-mode-change', this.logVimModeChange);
 			cmEditor.on('vim-mode-change', this.logVimModeChange);
 
@@ -217,7 +236,7 @@ export default class VimrcPlugin extends Plugin {
 				break;
 		}
 		if (this.settings.displayVimMode)
-			this.vimStatusBar?.setText(this.currentVimStatus);
+			this.updateVimStatusBar();
 	}
 
 	onunload() {
@@ -245,7 +264,7 @@ export default class VimrcPlugin extends Plugin {
 				this.defineJsFile(this.codeMirrorVimObject);
 				this.defineSource(this.codeMirrorVimObject);
 
-        this.loadVimCommands(vimCommands);
+				this.loadVimCommands(vimCommands);
 
 				this.prepareChordDisplay();
 				this.prepareVimModeDisplay();
@@ -583,7 +602,11 @@ export default class VimrcPlugin extends Plugin {
 	prepareVimModeDisplay() {
 		if (this.settings.displayVimMode) {
 			this.vimStatusBar = this.addStatusBarItem() // Add status bar item
-			this.vimStatusBar.setText(vimStatus.normal) // Init the vimStatusBar with normal mode
+			this.vimStatusBar.setText(
+				this.settings.vimStatusPromptMap[vimStatus.normal]
+			); // Init the vimStatusBar with normal mode
+			this.vimStatusBar.addClass(vimStatusPromptClass);
+			this.vimStatusBar.dataset.vimMode = this.currentVimStatus;
 		}
 	}
 
@@ -743,6 +766,73 @@ class SettingsTab extends PluginSettingTab {
 					this.plugin.settings.supportJsCommands = value;
 					this.plugin.saveSettings();
 				})
+			});
+
+		containerEl.createEl('h2', {text: 'Vim Mode Display Prompt'});
+
+		new Setting(containerEl)
+			.setName('Normal mode prompt')
+			.setDesc('Set the status prompt text for normal mode.')
+			.addText((text) => {
+				text.setPlaceholder('Default: 🟢');
+				text.setValue(
+					this.plugin.settings.vimStatusPromptMap.normal ||
+						DEFAULT_SETTINGS.vimStatusPromptMap.normal
+				);
+				text.onChange((value) => {
+					this.plugin.settings.vimStatusPromptMap.normal = value ||
+						DEFAULT_SETTINGS.vimStatusPromptMap.normal;
+					this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName('Insert mode prompt')
+			.setDesc('Set the status prompt text for insert mode.')
+			.addText((text) => {
+				text.setPlaceholder('Default: 🟠');
+				text.setValue(
+					this.plugin.settings.vimStatusPromptMap.insert ||
+						DEFAULT_SETTINGS.vimStatusPromptMap.insert
+				);
+				text.onChange((value) => {
+					this.plugin.settings.vimStatusPromptMap.insert = value ||
+						DEFAULT_SETTINGS.vimStatusPromptMap.insert;
+					console.log(this.plugin.settings.vimStatusPromptMap);
+					this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName('Visual mode prompt')
+			.setDesc('Set the status prompt text for visual mode.')
+			.addText((text) => {
+				text.setPlaceholder('Default: 🟡');
+				text.setValue(
+					this.plugin.settings.vimStatusPromptMap.visual ||
+						DEFAULT_SETTINGS.vimStatusPromptMap.visual
+				);
+				text.onChange((value) => {
+					this.plugin.settings.vimStatusPromptMap.visual = value ||
+						DEFAULT_SETTINGS.vimStatusPromptMap.visual;
+					this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName('Replace mode prompt')
+			.setDesc('Set the status prompt text for replace mode.')
+			.addText((text) => {
+				text.setPlaceholder('Default: 🔴');
+				text.setValue(
+					this.plugin.settings.vimStatusPromptMap.replace ||
+						DEFAULT_SETTINGS.vimStatusPromptMap.replace
+				);
+				text.onChange((value) => {
+					this.plugin.settings.vimStatusPromptMap.replace = value ||
+						DEFAULT_SETTINGS.vimStatusPromptMap.replace;
+					this.plugin.saveSettings();
+				});
 			});
 	}
 }

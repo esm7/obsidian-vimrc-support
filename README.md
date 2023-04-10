@@ -283,6 +283,121 @@ nmap [[ :prevHeading
 
 See [here](JsSnippets.md) for the full example, and please contribute your own!
 
+### Custom Styles for Status Bar
+
+You may utilize the vim mode display prompt class and the `data-vim-mode` attribute to 
+add styles to the status bar prompt (e.g. assign colors for different status). You can 
+also toggle the setting in settings page to also apply the display prompt class to the 
+entire status bar container if you want some customizations on it.
+
+The display prompt class: `vimrc-support-vim-mode`
+
+The `data-vim-mode` values:
+
+| Mode    | Data Value (`data-vim-mode`) |
+| ------- | ---------------------------- |
+| normal  | `normal`                     |
+| insert  | `insert`                     |
+| visual  | `visual`                     |
+| replace | `replace`                    |
+
+#### Powerline Styling Snippet
+
+**Screenshots**
+
+<img width="1470" alt="Screen Shot 2023-04-09 at 19 19 53" src="https://user-images.githubusercontent.com/11176415/230812728-731e24d3-d667-478c-831c-14e0010e7973.png">
+<img width="1470" alt="Screen Shot 2023-04-09 at 19 20 09" src="https://user-images.githubusercontent.com/11176415/230812731-26ba0c02-1948-4a26-89d2-3e73a11076d1.png">
+<img width="1470" alt="Screen Shot 2023-04-09 at 19 20 22" src="https://user-images.githubusercontent.com/11176415/230812734-f51a01c9-5f80-4da7-b051-04018cc805cc.png">
+<img width="1470" alt="Screen Shot 2023-04-09 at 19 20 37" src="https://user-images.githubusercontent.com/11176415/230812736-6fa688db-37b9-4b70-bacb-a6553b0762cb.png">
+
+```css
+div.status-bar-item.plugin-obsidian-vimrc-support {
+  /* Papercolor theme */
+  --text-color-normal: #585858;
+  --text-color-insert: #005f87;
+  --text-color-visual: white;
+  --text-color-replace: white;
+
+  --background-color-normal: #eeeeee;
+  --background-color-insert: #eeeeee;
+  --background-color-visual: #d75f00;
+  --background-color-replace: #d70087;
+}
+
+div.status-bar-item.plugin-obsidian-vimrc-support {
+  /* 
+    Move to bottom left corner and discard top/left/bottom space
+    from container paddings.
+   */
+  order: -9999;
+  margin: -4px auto -5px -5px;
+
+  /* 
+    We have the :after pseudo-element next, so padding-right
+    is not needed
+    */
+  padding-right: 0px;
+  padding-left: 1em;
+
+  /* Use Monospace font */
+  font-family: 'MesloLGM Nerd Font Mono'; /* !!! Needs to be a powerline font */
+  font-weight: bold;
+  font-size: 1.2em;
+
+  /* Clear spaces made from radius borders */
+  border-top-right-radius: 0px;
+  border-bottom-right-radius: 0px;
+}
+
+div.status-bar-item.plugin-obsidian-vimrc-support:after {
+  /* Powerline separator character */
+  content: '';
+  position: relative;
+  font-size: 1.5rem;
+  left: 0.9rem;
+
+  /* Fine adjust the position */
+  margin-top: 0.1rem;
+}
+
+/* Normal */
+div.status-bar-item.vimrc-support-vim-mode[data-vim-mode="normal"]:after {
+  color: var(--background-color-normal);
+}
+div.status-bar-item.vimrc-support-vim-mode[data-vim-mode="normal"] {
+  color: var(--text-color-normal);
+  background-color: var(--background-color-normal);
+}
+
+/* Insert */
+div.status-bar-item.vimrc-support-vim-mode[data-vim-mode="insert"]:after {
+  color: var(--background-color-insert);
+}
+div.status-bar-item.vimrc-support-vim-mode[data-vim-mode="insert"] {
+  color: var(--text-color-insert);
+  background-color: var(--background-color-insert);
+}
+
+/* Visual */
+div.status-bar-item.vimrc-support-vim-mode[data-vim-mode="visual"]:after {
+  color: var(--background-color-visual);
+}
+div.status-bar-item.vimrc-support-vim-mode[data-vim-mode="visual"] {
+  color: var(--text-color-visual);
+  background-color: var(--background-color-visual);
+}
+
+/* Replace */
+div.status-bar-item.vimrc-support-vim-mode[data-vim-mode="replace"]:after {
+  color: var(--background-color-replace);
+}
+div.status-bar-item.vimrc-support-vim-mode[data-vim-mode="replace"] {
+  color: var(--text-color-replace);
+  background-color: var(--background-color-replace);
+}
+```
+
+Note that the above snippet uses powerline glygh for the triangular shape, so you need to install a [powerline font](https://github.com/powerline/fonts) to display correctly. And of course, feel free to change the CSS variables to whatever color palette you want!
 
 ## Changelog
 

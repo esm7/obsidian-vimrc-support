@@ -303,6 +303,13 @@ The `data-vim-mode` values:
 
 #### Powerline Styling Snippet
 
+**Screenshots**
+
+<img width="1470" alt="Screen Shot 2023-04-09 at 19 19 53" src="https://user-images.githubusercontent.com/11176415/230812728-731e24d3-d667-478c-831c-14e0010e7973.png">
+<img width="1470" alt="Screen Shot 2023-04-09 at 19 20 09" src="https://user-images.githubusercontent.com/11176415/230812731-26ba0c02-1948-4a26-89d2-3e73a11076d1.png">
+<img width="1470" alt="Screen Shot 2023-04-09 at 19 20 22" src="https://user-images.githubusercontent.com/11176415/230812734-f51a01c9-5f80-4da7-b051-04018cc805cc.png">
+<img width="1470" alt="Screen Shot 2023-04-09 at 19 20 37" src="https://user-images.githubusercontent.com/11176415/230812736-6fa688db-37b9-4b70-bacb-a6553b0762cb.png">
+
 ```css
 div.status-bar-item.plugin-obsidian-vimrc-support {
   /* Papercolor theme */

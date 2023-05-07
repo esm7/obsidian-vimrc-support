@@ -71,7 +71,7 @@ In some cases you can find workarounds by experimenting, and the easiest way to 
 
 ## Installation
 
-In the Obsidian.md settings under "Third-party plugin", turn off Safe mode, then browse to this plugin.
+In the Obsidian.md settings under "Community plugins", click on "Turn on community plugins", then browse to this plugin.
 
 Alternatively (and less recommended), you can install it manually: just copy `main.js` and `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-vimrc-support/`.
 

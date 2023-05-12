@@ -446,48 +446,22 @@ export default class VimrcPlugin extends Plugin {
 			let beginning = newArgs[0].replace("\\\\", "\\").replace("\\ ", " "); // Get the beginning surround text
 			let ending = newArgs[1].replace("\\\\", "\\").replace("\\ ", " "); // Get the ending surround text
 
-			let currentSelections = this.currentSelection;
-			var chosenSelection = currentSelections && currentSelections.length > 0 ? currentSelections[0] : null;
-			if (this.currentSelection && currentSelections?.length > 1) {
-				console.log("WARNING: Multiple selections in surround. Attempt to select matching cursor. (obsidian-vimrc-support)")
-				const cursorPos = editor.getCursor();
-				for (const selection of currentSelections) {
-					if (selection.head.line == cursorPos.line && selection.head.ch == cursorPos.ch) {
-						console.log("RESOLVED: Selection matching cursor found. (obsidian-vimrc-support)")
-						chosenSelection = selection;
-						break;
-					}
+			// Get selection at main index
+			var chosenSelection = this.currentSelection?.[editor.cm.state.selection.mainIndex] || {anchor: editor.getCursor(), head: editor.getCursor()};
+			if (editor.posToOffset(chosenSelection.anchor) === editor.posToOffset(chosenSelection.head)) {
+				// No range of selected text, so select word.
+				let wordAt = editor.wordAt(chosenSelection.head);
+				if (wordAt) {
+					chosenSelection = {anchor: wordAt.from, head: wordAt.to};
 				}
 			}
-			if (JSON.stringify(chosenSelection.anchor) === JSON.stringify(chosenSelection.head)) {
-				// No range of selected text, so select word.
-				var line = editor.getLine(chosenSelection.anchor.line);
-				if (line.length === 0)
-					throw new Error("can't surround on an empty line");
-				// Go to the beginning of the word
-				let wordStart = chosenSelection.anchor.ch;
-				for ( ; wordStart >= 0 ; wordStart--)
-					if (line[wordStart].match(/\s/))
-						break;
-				wordStart++;
-				let wordEnd = chosenSelection.anchor.ch;
-				for ( ; wordEnd < line.length ; wordEnd++)
-					if (line[wordEnd].match(/\s/))
-						break;
-				var word = line.substring(wordStart, wordEnd);
-				chosenSelection.anchor.ch = wordStart;
-				chosenSelection.head.ch = wordEnd;
-				chosenSelection = {
-					anchor: {line: chosenSelection.anchor.line, ch: wordStart},
-					head: {line: chosenSelection.head.line, ch: wordEnd}
-				};
-			}
-			// If the selection is reverse, switch the variables
-			if (chosenSelection.anchor.line > chosenSelection.head.line ||
-					(chosenSelection.anchor.line == chosenSelection.head.line && chosenSelection.anchor.ch > chosenSelection.head.ch))
-				[chosenSelection.anchor, chosenSelection.head] = [chosenSelection.head, chosenSelection.anchor];
-			let currText = editor.getRange(chosenSelection.anchor, chosenSelection.head);
+			let currText = editor.getRange(...[chosenSelection.anchor, chosenSelection.head].sort((a, b) => editor.posToOffset(a) - editor.posToOffset(b)));
 			editor.replaceRange(beginning + currText + ending, chosenSelection.anchor, chosenSelection.head);
+			// If no selection, place cursor between beginning and ending
+			if (editor.posToOffset(chosenSelection.anchor) === editor.posToOffset(chosenSelection.head)) {
+				chosenSelection.head.ch += beginning.length;
+				editor.setCursor(chosenSelection.head);
+			}
 		}
 
 		vimObject.defineEx("surround", "", (cm: any, params: any) => { surroundFunc(params.args); });

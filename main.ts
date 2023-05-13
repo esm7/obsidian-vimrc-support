@@ -446,8 +446,19 @@ export default class VimrcPlugin extends Plugin {
 			let beginning = newArgs[0].replace("\\\\", "\\").replace("\\ ", " "); // Get the beginning surround text
 			let ending = newArgs[1].replace("\\\\", "\\").replace("\\ ", " "); // Get the ending surround text
 
-			// Get selection at main index
-			var chosenSelection = this.currentSelection?.[editor.cm.state.selection.mainIndex] || {anchor: editor.getCursor(), head: editor.getCursor()};
+            let currentSelections = this.currentSelection;
+			var chosenSelection = currentSelections?.[0] ? currentSelections[0] : {anchor: editor.getCursor(), head: editor.getCursor()};
+			if (currentSelections?.length > 1) {
+				console.log("WARNING: Multiple selections in surround. Attempt to select matching cursor. (obsidian-vimrc-support)")
+				const cursorPos = editor.getCursor();
+				for (const selection of currentSelections) {
+					if (selection.head.line == cursorPos.line && selection.head.ch == cursorPos.ch) {
+						console.log("RESOLVED: Selection matching cursor found. (obsidian-vimrc-support)")
+						chosenSelection = selection;
+						break;
+					}
+				}
+			}
 			if (editor.posToOffset(chosenSelection.anchor) === editor.posToOffset(chosenSelection.head)) {
 				// No range of selected text, so select word.
 				let wordAt = editor.wordAt(chosenSelection.head);
@@ -455,7 +466,12 @@ export default class VimrcPlugin extends Plugin {
 					chosenSelection = {anchor: wordAt.from, head: wordAt.to};
 				}
 			}
-			let currText = editor.getRange(...[chosenSelection.anchor, chosenSelection.head].sort((a, b) => editor.posToOffset(a) - editor.posToOffset(b)));
+            let currText;
+            if (editor.posToOffset(chosenSelection.anchor) > editor.posToOffset(chosenSelection.head)) {
+                currText = editor.getRange(chosenSelection.head, chosenSelection.anchor);
+            } else {
+                currText = editor.getRange(chosenSelection.anchor, chosenSelection.head);
+            }
 			editor.replaceRange(beginning + currText + ending, chosenSelection.anchor, chosenSelection.head);
 			// If no selection, place cursor between beginning and ending
 			if (editor.posToOffset(chosenSelection.anchor) === editor.posToOffset(chosenSelection.head)) {

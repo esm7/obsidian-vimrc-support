@@ -8,6 +8,12 @@ For users of the Obsidian.md Vim mode, this is very useful for making various se
 Note that this plugin is **not** the Vim support of Obsidian -- that support is built-in and you can perfectly use Obsidian in Vim mode without this plugin.
 This plugin merely implements the ability to load a persistent configuration and adds a few extras.
 
+## Maintainer Needed
+
+While I am still around for some urgent fixes, especially when the plugin stops working due to Obsidian API changes API, I am no longer able to give it the attention it deserves.
+
+Anyone who wishes to take over, please message me.
+
 ## Usage
 
 First and foremost, make sure you have the Obsidian Vim key bindings turned on -- see Editor -> Vim key bindings.

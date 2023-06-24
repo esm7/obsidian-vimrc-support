@@ -59,3 +59,39 @@ exmap prevHeading jsfile mdHelpers.js {jumpHeading(false)}
 nmap ]] :nextHeading
 nmap [[ :prevHeading
 ```
+
+## Vimwiki-like link navigation
+
+This snippet allows to navigate next/previous links with Tab/Shift+Tab.
+
+It mimicks the behaviour of vimwiki keybindings where you would press Tab several times to get to the link you want.
+
+Append this function to the file mentioned above (after jumpHeading).
+
+```js
+function jumpNextLink(isForward) {
+	const editor = view.editor;
+	let posToSearchFrom = editor.getCursor();
+	posToSearchFrom.line += isForward ? 1 : -1;
+	const cursorOffset = editor.posToOffset(posToSearchFrom);
+	const lookupToUse = isForward ? regexIndexOf : regexLastIndexOf;
+	let headingOffset = lookupToUse(editor.getValue(), /\[\[/g, cursorOffset);
+	// If not found from the cursor position, try again from the document beginning (or reverse beginning)
+	if (headingOffset === -1)
+		headingOffset = lookupToUse(editor.getValue(), /\[\[/g);
+	const newPos = editor.offsetToPos(headingOffset+2);
+	editor.setCursor(newPos);
+}
+```
+
+Then put these lines in vimrc file to set the keybindings. Optionally (as in vimwiki) you can have ENTER bound to follow the link.
+
+```
+exmap nextLink jsfile mdHelpers.js {jumpNextLink(true)}
+exmap prevLink jsfile mdHelpers.js {jumpNextLink(false)}
+nmap <Tab> :nextLink
+nmap <S-Tab> :prevLink
+
+exmap followlink obcommand editor:follow-link
+nmap <CR> :followlink
+```

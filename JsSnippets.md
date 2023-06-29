@@ -39,7 +39,7 @@ function regexLastIndexOf(string, regex, startpos) {
 function jumpHeading(isForward) {
 	const editor = view.editor;
 	let posToSearchFrom = editor.getCursor();
-	posToSearchFrom.line += isForward ? 1 : -1;
+	posToSearchFrom.line += isForward ? 0 : -1;
 	const cursorOffset = editor.posToOffset(posToSearchFrom);
 	const lookupToUse = isForward ? regexIndexOf : regexLastIndexOf;
 	let headingOffset = lookupToUse(editor.getValue(), /^#(#*) /gm, cursorOffset);

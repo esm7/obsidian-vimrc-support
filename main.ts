@@ -455,8 +455,8 @@ export default class VimrcPlugin extends Plugin {
 				throw new Error("surround requires exactly 2 parameters: prefix and postfix text.");
 			}
 
-			let beginning = newArgs[0].replace(/\\(.)/g, function(str, char) { return escapeCodes[char]; }); // Get the beginning surround text
-			let ending = newArgs[1].replace(/\\(.)/g, function(str, char) { return escapeCodes[char]; }); // Get the ending surround text
+			let beginning = newArgs[0].replace(/\\([\\rntsb &])/g, function(str, char) { return escapeCodes[char]; }); // Get the beginning surround text
+			let ending = newArgs[1].replace(/\\([\\rntsb &])/g, function(str, char) { return escapeCodes[char]; }); // Get the ending surround text
 
             let currentSelections = this.currentSelection;
 			var chosenSelection = currentSelections?.[0] ? currentSelections[0] : {anchor: editor.getCursor(), head: editor.getCursor()};

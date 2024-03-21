@@ -261,6 +261,7 @@ If you understand the risks and choose to use this feature, turn on "Support JS 
 
 There are two ways to define JS-based commands.
 
+#### JSCommand - JSFunction
 **The `jscommand` Ex command** defines a JS function that has an `editor: Editor`, a `view: MarkdownView` and a `selection: EditorSelection` arguments (see the [Obsidian API](https://github.com/obsidianmd/obsidian-api/blob/master/obsidian.d.ts) if you're not sure what these are).
 You define only the body of the function, in a single line wrapped by curly braces, e.g.:
 
@@ -276,7 +277,10 @@ exmap logCursor jscommand { console.log(editor.getCursor()); }
 nmap <C-q> :logCursor
 ```
 
+#### JSCommand - JSFile
 Another version of the same functionality is **the `jsfile` Ex command**, which executes code from a file you give as a parameter, then appends another optional piece of code to it (e.g. in case you want to store several helper methods in a file and launch different ones as part of different commands).
+
+The `jsfile` should be placed in your vault (alongside, e.g., your markdown files).
 
 As above, the code running as part of `jsfile` has the arguments `editor: Editor`, `view: MarkdownView` and `selection: EditorSelection`.
 

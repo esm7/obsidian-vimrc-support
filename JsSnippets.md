@@ -60,6 +60,26 @@ nmap ]] :nextHeading
 nmap [[ :prevHeading
 ```
 
+
+## Avoid unfolding folded sections
+```javascript
+function moveUpSkipFold() {
+  view.editor.exec('goUp');
+}
+function moveDownSkipFold() {
+  view.editor.exec('goDown');
+}
+```
+Then in your `.obsidian.vimrc` file add the following:
+
+```
+exmap upSkipFold jsfile mdHelpers.js {moveUpSkipFold()}
+exmap downSkipFold jsfile mdHelpers.js {moveDownSkipFold()}
+nmap k :upSkipFold
+nmap j :downSkipFold
+```
+
+
 ## Vimwiki-like link navigation
 
 This snippet allows to navigate next/previous links with Tab/Shift+Tab.

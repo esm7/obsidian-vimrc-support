@@ -1,5 +1,7 @@
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
-import { EditorSelection, Notice, App, MarkdownView, Plugin, PluginSettingTab, Setting, TFile } from 'obsidian';
+import { App, EditorSelection, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { jumpToNextHeading, jumpToPreviousHeading } from './motions/jumpToHeading';
+import { moveDownSkipFold, moveUpSkipFold } from './motions/moveAndSkipFold';
 
 declare const CodeMirror: any;
 
@@ -257,6 +259,7 @@ export default class VimrcPlugin extends Plugin {
 			var cmEditor = this.getCodeMirror(view);
 			if (cmEditor && !this.codeMirrorVimObject.loadedVimrc) {
 				this.defineBasicCommands(this.codeMirrorVimObject);
+				this.defineObsidianVimMotions(this.codeMirrorVimObject);
 				this.defineSendKeys(this.codeMirrorVimObject);
 				this.defineObCommand(this.codeMirrorVimObject);
 				this.defineSurround(this.codeMirrorVimObject);
@@ -366,6 +369,21 @@ export default class VimrcPlugin extends Plugin {
 			});
 		});
 	}
+
+
+  defineObsidianVimMotions(vimObject: any) {
+    vimObject.defineMotion('jumpToNextHeading', jumpToNextHeading);
+    vimObject.mapCommand('g]', 'motion', 'jumpToNextHeading');
+
+    vimObject.defineMotion('jumpToPreviousHeading', jumpToPreviousHeading);
+    vimObject.mapCommand('g[', 'motion', 'jumpToPreviousHeading');
+
+    vimObject.defineMotion('moveUpSkipFold', moveUpSkipFold);
+    vimObject.mapCommand('zk', 'motion', 'moveUpSkipFold');
+
+    vimObject.defineEx('moveDownSkipFold', moveDownSkipFold);
+    vimObject.mapCommand('zj', 'motion', 'moveDownSkipFold');
+  }
 
 	defineSendKeys(vimObject: any) {
 		vimObject.defineEx('sendkeys', '', async (cm: any, params: any) => {

@@ -47,12 +47,13 @@ function getNthNextInstanceOfPattern({
 }): number {
   const globalRegex = makeGlobalRegex(regex);
   globalRegex.lastIndex = startingIdx + 1;
-  let currMatch;
+  let currMatch, lastMatch;
   let numMatchesFound = 0;
   while (numMatchesFound < n && (currMatch = globalRegex.exec(content)) != null) {
+    lastMatch = currMatch;
     numMatchesFound++;
   }
-  return currMatch?.index;
+  return lastMatch?.index;
 }
 
 /**

@@ -8,12 +8,12 @@
     "allowJs": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
+    "downlevelIteration": true,
     "importHelpers": true,
     "lib": [
       "dom",
-      "es5",
       "scripthost",
-      "es2015"
+      "ES2020"
     ]
   },
   "include": [

@@ -1,7 +1,8 @@
+import { Editor as CodeMirrorEditor } from 'codemirror';
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
-import { App, EditorSelection, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, EditorPosition, EditorSelection, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import { jumpToNextHeading, jumpToPreviousHeading } from './motions/jumpToHeading';
-import { moveDownSkipFold, moveUpSkipFold } from './motions/moveAndSkipFold';
+import { jumpToPreviousLink } from './motions/jumpToLink';
 
 declare const CodeMirror: any;
 
@@ -373,16 +374,22 @@ export default class VimrcPlugin extends Plugin {
 
   defineObsidianVimMotions(vimObject: any) {
     vimObject.defineMotion('jumpToNextHeading', jumpToNextHeading);
-    vimObject.mapCommand('g]', 'motion', 'jumpToNextHeading');
+    vimObject.mapCommand('gh', 'motion', 'jumpToNextHeading');
 
     vimObject.defineMotion('jumpToPreviousHeading', jumpToPreviousHeading);
-    vimObject.mapCommand('g[', 'motion', 'jumpToPreviousHeading');
+    vimObject.mapCommand('gH', 'motion', 'jumpToPreviousHeading');
 
-    vimObject.defineMotion('moveUpSkipFold', moveUpSkipFold);
-    vimObject.mapCommand('zk', 'motion', 'moveUpSkipFold');
+    // vimObject.defineMotion('jumpToNextLink', jumpToNextLink);
+    // vimObject.mapCommand('gl', 'motion', 'jumpToNextLink');
 
-    vimObject.defineEx('moveDownSkipFold', moveDownSkipFold);
-    vimObject.mapCommand('zj', 'motion', 'moveDownSkipFold');
+    vimObject.defineMotion(
+			"jumpToPreviousLink",
+      (cm: CodeMirrorEditor, pos: EditorPosition, mArgs: { repeat: number }) => {
+				const obsidianEditor = this.getActiveView().editor;
+				return jumpToPreviousLink(obsidianEditor, cm, pos, mArgs);
+			}
+    );
+    vimObject.mapCommand('gL', 'motion', 'jumpToPreviousLink');
   }
 
 	defineSendKeys(vimObject: any) {

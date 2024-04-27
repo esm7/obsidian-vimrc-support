@@ -1,7 +1,8 @@
-import { Editor, EditorPosition } from "obsidian";
+import { Editor as CodeMirrorEditor } from "codemirror";
+import { EditorPosition } from "obsidian";
 
 export function jumpToNextHeading(
-  cm: Editor,
+  cm: CodeMirrorEditor,
   { line, ch }: EditorPosition,
   motionArgs: { repeat: number }
 ): EditorPosition {
@@ -17,7 +18,7 @@ export function jumpToNextHeading(
 }
 
 export function jumpToPreviousHeading(
-  cm: Editor,
+  cm: CodeMirrorEditor,
   { line, ch }: EditorPosition,
   motionArgs: { repeat: number }
 ): EditorPosition {

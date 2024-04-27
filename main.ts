@@ -1,8 +1,8 @@
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
-import { App, EditorSelection, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, EditorSelection, MarkdownView, Notice, Editor as ObsidianEditor, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import { jumpToNextHeading, jumpToPreviousHeading } from './motions/jumpToHeading';
 import { jumpToNextLink, jumpToPreviousLink } from './motions/jumpToLink';
-import { defineObsidianVimMotion } from './motions/utils/defineObsidianVimMotion';
+import { VimApi, defineObsidianVimMotion } from './utils/defineObsidianVimMotion';
 
 declare const CodeMirror: any;
 
@@ -250,6 +250,10 @@ export default class VimrcPlugin extends Plugin {
 		return this.app.workspace.getActiveViewOfType(MarkdownView);
 	}
 
+	private getActiveObsidianEditor(): ObsidianEditor {
+		return this.getActiveView().editor;
+	}
+
 	private getCodeMirror(view: MarkdownView): CodeMirror.Editor {
 		return (view as any).editMode?.editor?.cm?.cm;
 	}
@@ -372,11 +376,40 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 
-  defineObsidianVimMotions(vimObject: any) {
-		defineObsidianVimMotion(vimObject, jumpToNextHeading, 'gh')
-		defineObsidianVimMotion(vimObject, jumpToPreviousHeading, 'gH')
-		defineObsidianVimMotion(vimObject, jumpToNextLink, 'gl')
-		defineObsidianVimMotion(vimObject, jumpToPreviousLink, 'gL')
+  defineObsidianVimMotions(vimObject: VimApi) {
+		defineObsidianVimMotion(vimObject, jumpToNextHeading, 'gh');
+		defineObsidianVimMotion(vimObject, jumpToPreviousHeading, 'gH');
+		defineObsidianVimMotion(vimObject, jumpToNextLink, 'gl');
+		defineObsidianVimMotion(vimObject, jumpToPreviousLink, 'gL');
+
+		vimObject.defineAction('moveDownSkipFold', (cm, {repeat}) => {
+			const obsidianEditor = this.getActiveObsidianEditor();
+			let {line: oldLine, ch: oldCh} = obsidianEditor.getCursor();
+			for (let i = 0; i < repeat; i++) {
+				obsidianEditor.exec("goDown");
+				const {line: newLine, ch: newCh} = obsidianEditor.getCursor();
+				if (newLine === oldLine && newCh === oldCh) {
+					// Going down doesn't do anything anymore, stop now
+					return;
+				}
+				[oldLine, oldCh] = [newLine, newCh];
+			}
+		});
+		vimObject.mapCommand('zj', 'action', 'moveDownSkipFold', undefined, {});
+		vimObject.defineAction('moveUpSkipFold', (cm, {repeat}) => {
+			const obsidianEditor = this.getActiveObsidianEditor();
+			let {line: oldLine, ch: oldCh} = obsidianEditor.getCursor();
+			for (let i = 0; i < repeat; i++) {
+				obsidianEditor.exec("goUp");
+				const {line: newLine, ch: newCh} = obsidianEditor.getCursor();
+				if (newLine === oldLine && newCh === oldCh) {
+					// Going up doesn't do anything anymore, stop now
+					return;
+				}
+				[oldLine, oldCh] = [newLine, newCh];
+			}
+		});
+		vimObject.mapCommand('zk', 'action', 'moveUpSkipFold', undefined, {});
   }
 
 	defineSendKeys(vimObject: any) {

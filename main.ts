@@ -267,7 +267,7 @@ export default class VimrcPlugin extends Plugin {
 			var cmEditor = this.getCodeMirror(view);
 			if (cmEditor && !this.codeMirrorVimObject.loadedVimrc) {
 				this.defineBasicCommands(this.codeMirrorVimObject);
-				this.defineObsidianVimMotions(this.codeMirrorVimObject);
+				this.defineObsidianVimCommands(this.codeMirrorVimObject);
 				this.defineSendKeys(this.codeMirrorVimObject);
 				this.defineObCommand(this.codeMirrorVimObject);
 				this.defineSurround(this.codeMirrorVimObject);
@@ -379,7 +379,7 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 
-  defineObsidianVimMotions(vimObject: VimApi) {
+  defineObsidianVimCommands(vimObject: VimApi) {
 		defineObsidianVimMotion(vimObject, jumpToNextHeading, 'gh');
 		defineObsidianVimMotion(vimObject, jumpToPreviousHeading, 'gH');
 		defineObsidianVimMotion(vimObject, jumpToNextLink, 'gl');

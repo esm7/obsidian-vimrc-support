@@ -20,11 +20,9 @@ export function jumpToPattern({
 }): EditorPosition {
   const content = cm.getValue();
   const startingIdx = cm.indexFromPos(oldPosition);
-  const jumpFn =
-    direction === "next"
-      ? getNthNextInstanceOfPattern
-      : getNthPreviousInstanceOfPattern;
-  const matchIdx = jumpFn({ content, regex, startingIdx, n: repeat });
+  const findNthMatchFn =
+    direction === "next" ? findNthNextRegexMatch : findNthPreviousRegexMatch;
+  const matchIdx = findNthMatchFn({ content, regex, startingIdx, n: repeat });
   if (matchIdx === undefined) {
     return oldPosition;
   }
@@ -33,10 +31,10 @@ export function jumpToPattern({
 }
 
 /**
- * Returns the index of (up to) the n-th instance of a pattern in a string after a given starting
- * index. If the pattern is not found at all, returns undefined.
+ * Returns the index of (up to) the n-th next instance of a pattern in a string after a given
+ * starting index. If the pattern is not found at all, returns undefined.
  */
-function getNthNextInstanceOfPattern({
+function findNthNextRegexMatch({
   content,
   regex,
   startingIdx,
@@ -46,12 +44,15 @@ function getNthNextInstanceOfPattern({
   regex: RegExp;
   startingIdx: number;
   n: number;
-}): number {
+}): number | undefined {
   const globalRegex = makeGlobalRegex(regex);
   globalRegex.lastIndex = startingIdx + 1;
   let currMatch, lastMatch;
   let numMatchesFound = 0;
-  while (numMatchesFound < n && (currMatch = globalRegex.exec(content)) != null) {
+  while (
+    numMatchesFound < n &&
+    (currMatch = globalRegex.exec(content)) != null
+  ) {
     lastMatch = currMatch;
     numMatchesFound++;
   }
@@ -59,10 +60,10 @@ function getNthNextInstanceOfPattern({
 }
 
 /**
- * Returns the index of (up to) the nth-last instance of a pattern in a string before a given
+ * Returns the index of (up to) the nth-previous instance of a pattern in a string before a given
  * starting index. If the pattern is not found at all, returns undefined.
  */
-function getNthPreviousInstanceOfPattern({
+function findNthPreviousRegexMatch({
   content,
   regex,
   startingIdx,

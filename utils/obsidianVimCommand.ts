@@ -5,7 +5,7 @@
 import { Editor as CodeMirrorEditor } from "codemirror";
 import { Editor as ObsidianEditor } from "obsidian";
 
-import { MotionFn, VimApi } from "./vimApi";
+import { ActionFn, MotionFn, VimApi } from "./vimApi";
 
 export type ObsidianActionFn = (
   obsidianEditor: ObsidianEditor,
@@ -29,11 +29,7 @@ export function defineObsidianVimAction(
   obsidianActionFn: ObsidianActionFn,
   mapping: string
 ) {
-  const actionFn = (
-    cm: CodeMirrorEditor,
-    actionArgs: { repeat: number },
-    vimState: any
-  ) => {
+  const actionFn: ActionFn = (cm, actionArgs, vimState) => {
     const obsidianEditor = getActiveObsidianEditor();
     obsidianActionFn(obsidianEditor, cm, actionArgs, vimState);
   };

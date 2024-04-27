@@ -7,8 +7,12 @@ export type MotionFn = (
   motionArgs: { repeat: number }
 ) => EditorPosition;
 
-// Reference: @replit/codemirror-vim/src/vim.js
-type VimApi = {
+/**
+ * Partial representation of the CodeMirror Vim API that we use to define motions, commands, etc.
+ *
+ * Reference: https://github.com/replit/codemirror-vim/blob/master/src/vim.js
+ */
+export type VimApi = {
   defineMotion: (name: string, fn: MotionFn) => void;
   mapCommand: (
     keys: string,

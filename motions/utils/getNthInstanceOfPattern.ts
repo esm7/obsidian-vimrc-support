@@ -1,9 +1,38 @@
+import { Editor as CodeMirrorEditor } from "codemirror";
+import { EditorPosition } from "obsidian";
 import { shim as matchAllShim } from "string.prototype.matchall";
 matchAllShim();
 
+export function jumpToPattern({
+  cm,
+  oldPosition,
+  repeat,
+  regex,
+  direction,
+}: {
+  cm: CodeMirrorEditor;
+  oldPosition: EditorPosition;
+  repeat: number;
+  regex: RegExp;
+  direction: "next" | "previous";
+}): EditorPosition {
+  const content = cm.getValue();
+  const startingIdx = cm.indexFromPos(oldPosition);
+  const jumpFn =
+    direction === "next"
+      ? getNthNextInstanceOfPattern
+      : getNthPreviousInstanceOfPattern;
+  const matchIdx = jumpFn({ content, regex, startingIdx, n: repeat });
+  if (matchIdx === undefined) {
+    return oldPosition;
+  }
+  const newPosition = cm.posFromIndex(matchIdx);
+  return newPosition;
+}
+
 /**
- * Returns the index of the first instance of a pattern in a string after a given starting index.
- * If the pattern is not found, returns the starting index.
+ * Returns the index of (up to) the n-th instance of a pattern in a string after a given starting
+ * index. If the pattern is not found at all, returns undefined.
  */
 export function getNthNextInstanceOfPattern({
   content,
@@ -16,24 +45,19 @@ export function getNthNextInstanceOfPattern({
   startingIdx: number;
   n: number;
 }): number {
+  const globalRegex = makeGlobalRegex(regex);
+  globalRegex.lastIndex = startingIdx + 1;
+  let currMatch;
   let numMatchesFound = 0;
-  let currMatchIdx = startingIdx;
-  const globalRegex = addGlobalFlagIfNeeded(regex);
-  while (currMatchIdx < content.length - 1 && numMatchesFound < n) {
-    const contentToSearch = content.substring(currMatchIdx + 1);
-    const substringMatchIdx = contentToSearch.search(globalRegex);
-    if (substringMatchIdx === -1) {
-      return currMatchIdx;
-    }
-    currMatchIdx = currMatchIdx + substringMatchIdx + 1;
+  while (numMatchesFound < n && (currMatch = globalRegex.exec(content)) != null) {
     numMatchesFound++;
   }
-  return currMatchIdx;
+  return currMatch?.index;
 }
 
 /**
- * Returns the index of the last found instance of a pattern in a string before a given starting
- * index. If the pattern is not found, returns undefined.
+ * Returns the index of (up to) the nth-last instance of a pattern in a string before a given
+ * starting index. If the pattern is not found at all, returns undefined.
  */
 export function getNthPreviousInstanceOfPattern({
   content,
@@ -46,7 +70,7 @@ export function getNthPreviousInstanceOfPattern({
   startingIdx: number;
   n: number;
 }): number | undefined {
-  const globalRegex = addGlobalFlagIfNeeded(regex);
+  const globalRegex = makeGlobalRegex(regex);
   const contentToSearch = content.substring(0, startingIdx);
   const previousMatches = [...contentToSearch.matchAll(globalRegex)];
   if (previousMatches.length < n) {
@@ -55,8 +79,9 @@ export function getNthPreviousInstanceOfPattern({
   return previousMatches[previousMatches.length - n].index;
 }
 
-function addGlobalFlagIfNeeded(regex: RegExp): RegExp {
-  return regex.global ? regex : new RegExp(regex.source, getGlobalFlags(regex));
+function makeGlobalRegex(regex: RegExp): RegExp {
+  const globalFlags = getGlobalFlags(regex);
+  return new RegExp(regex.source, globalFlags);
 }
 
 function getGlobalFlags(regex: RegExp): string {

@@ -1,8 +1,8 @@
-import { Editor as CodeMirrorEditor } from 'codemirror';
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
-import { App, EditorPosition, EditorSelection, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, EditorSelection, MarkdownView, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
 import { jumpToNextHeading, jumpToPreviousHeading } from './motions/jumpToHeading';
-import { jumpToPreviousLink } from './motions/jumpToLink';
+import { jumpToNextLink, jumpToPreviousLink } from './motions/jumpToLink';
+import { defineObsidianVimMotion } from './motions/utils/defineObsidianVimMotion';
 
 declare const CodeMirror: any;
 
@@ -373,23 +373,10 @@ export default class VimrcPlugin extends Plugin {
 
 
   defineObsidianVimMotions(vimObject: any) {
-    vimObject.defineMotion('jumpToNextHeading', jumpToNextHeading);
-    vimObject.mapCommand('gh', 'motion', 'jumpToNextHeading');
-
-    vimObject.defineMotion('jumpToPreviousHeading', jumpToPreviousHeading);
-    vimObject.mapCommand('gH', 'motion', 'jumpToPreviousHeading');
-
-    // vimObject.defineMotion('jumpToNextLink', jumpToNextLink);
-    // vimObject.mapCommand('gl', 'motion', 'jumpToNextLink');
-
-    vimObject.defineMotion(
-			"jumpToPreviousLink",
-      (cm: CodeMirrorEditor, pos: EditorPosition, mArgs: { repeat: number }) => {
-				const obsidianEditor = this.getActiveView().editor;
-				return jumpToPreviousLink(obsidianEditor, cm, pos, mArgs);
-			}
-    );
-    vimObject.mapCommand('gL', 'motion', 'jumpToPreviousLink');
+		defineObsidianVimMotion(vimObject, jumpToNextHeading, 'gh')
+		defineObsidianVimMotion(vimObject, jumpToPreviousHeading, 'gH')
+		defineObsidianVimMotion(vimObject, jumpToNextLink, 'gl')
+		defineObsidianVimMotion(vimObject, jumpToPreviousLink, 'gL')
   }
 
 	defineSendKeys(vimObject: any) {

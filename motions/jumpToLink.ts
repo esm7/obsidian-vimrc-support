@@ -1,28 +1,39 @@
-import { Editor as CodeMirrorEditor } from "codemirror";
-import { EditorPosition, Editor as ObsidianEditor } from "obsidian";
+import { MotionFn } from "./utils/defineObsidianVimMotion";
 import {
-  getNthPreviousInstanceOfPattern
-} from "./motionUtils";
+  getNthNextInstanceOfPattern,
+  getNthPreviousInstanceOfPattern,
+} from "./utils/getNthInstanceOfPattern";
 
 const LINK_REGEX = /\[\[[^\]\]]+?\]\]/g;
 
-export function jumpToPreviousLink(
-  obsidianEditor: ObsidianEditor,
-  cm: CodeMirrorEditor,
-  { line, ch }: EditorPosition,
-  motionArgs: { repeat: number }
-): EditorPosition {
+export const jumpToNextLink: MotionFn = (cm, oldPosition, { repeat }) => {
   const content = cm.getValue();
-  const cursorOffset = obsidianEditor.posToOffset({ line, ch });
+  const cursorOffset = cm.indexFromPos(oldPosition);
+  const nextLinkIdx = getNthNextInstanceOfPattern({
+    content,
+    regex: LINK_REGEX,
+    startingIdx: cursorOffset,
+    n: repeat,
+  });
+  if (nextLinkIdx === undefined) {
+    return oldPosition;
+  }
+  const newPosition = cm.posFromIndex(nextLinkIdx + 2);
+  return newPosition;
+};
+
+export const jumpToPreviousLink: MotionFn = (cm, oldPosition, { repeat }) => {
+  const content = cm.getValue();
+  const cursorOffset = cm.indexFromPos(oldPosition);
   const previousLinkIdx = getNthPreviousInstanceOfPattern({
     content,
     regex: LINK_REGEX,
     startingIdx: cursorOffset,
-    n: motionArgs.repeat,
+    n: repeat,
   });
   if (previousLinkIdx === undefined) {
-    return { line, ch };
+    return oldPosition;
   }
-  const newPosition = obsidianEditor.offsetToPos(previousLinkIdx + 2);
+  const newPosition = cm.posFromIndex(previousLinkIdx + 2);
   return newPosition;
-}
+};

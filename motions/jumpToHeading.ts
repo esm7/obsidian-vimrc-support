@@ -1,12 +1,9 @@
-import { Editor as CodeMirrorEditor } from "codemirror";
-import { EditorPosition } from "obsidian";
+import { MotionFn } from "./utils/defineObsidianVimMotion";
 
-export function jumpToNextHeading(
-  cm: CodeMirrorEditor,
-  { line, ch }: EditorPosition,
-  motionArgs: { repeat: number }
-): EditorPosition {
-  const { repeat } = motionArgs;
+const HEADING_REGEX = /^#+ /;
+
+export const jumpToNextHeading: MotionFn = (cm, oldPosition, { repeat }) => {
+  const { line, ch } = oldPosition;
   const noteContent = cm.getValue();
   const nextContentLines = noteContent.split("\n").slice(line + 1);
   const nextHeadingIdx =
@@ -15,14 +12,14 @@ export function jumpToNextHeading(
     return { line, ch };
   }
   return { line: nextHeadingIdx, ch: 0 };
-}
+};
 
-export function jumpToPreviousHeading(
-  cm: CodeMirrorEditor,
-  { line, ch }: EditorPosition,
-  motionArgs: { repeat: number }
-): EditorPosition {
-  const { repeat } = motionArgs;
+export const jumpToPreviousHeading: MotionFn = (
+  cm,
+  oldPosition,
+  { repeat }
+) => {
+  const { line, ch } = oldPosition;
   const noteContent = cm.getValue();
   const isAlreadyOnHeading = cm.getLine(line).startsWith("#");
   const lastIdxToConsider = isAlreadyOnHeading ? line - 1 : line;
@@ -35,7 +32,7 @@ export function jumpToPreviousHeading(
     return { line, ch };
   }
   return { line: lastIdxToConsider - previousHeadingIdx, ch: 0 };
-}
+};
 
 function getNthHeadingIndex(contentLines: string[], n: number): number {
   let numHeadingsFound = 0;

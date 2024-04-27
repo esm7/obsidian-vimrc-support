@@ -1,9 +1,11 @@
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
 import { App, EditorSelection, MarkdownView, Notice, Editor as ObsidianEditor, Plugin, PluginSettingTab, Setting } from 'obsidian';
+
 import { moveDownSkippingFolds, moveUpSkippingFolds } from './actions/moveSkippingFolds';
 import { jumpToNextHeading, jumpToPreviousHeading } from './motions/jumpToHeading';
 import { jumpToNextLink, jumpToPreviousLink } from './motions/jumpToLink';
-import { VimApi, defineObsidianVimAction, defineObsidianVimMotion } from './utils/vimApi';
+import { defineObsidianVimAction, defineObsidianVimMotion } from './utils/obsidianVimCommand';
+import { VimApi } from './utils/vimApi';
 
 declare const CodeMirror: any;
 

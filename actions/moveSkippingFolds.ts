@@ -1,5 +1,6 @@
 import { Editor as ObsidianEditor } from "obsidian";
-import { ObsidianActionFn } from "../utils/vimApi";
+
+import { ObsidianActionFn } from "../utils/obsidianVimCommand";
 
 export const moveDownSkippingFolds: ObsidianActionFn = (
   obsidianEditor,

@@ -1,6 +1,8 @@
 import { Editor as CodeMirrorEditor } from "codemirror";
 import { EditorPosition } from "obsidian";
 import { shim as matchAllShim } from "string.prototype.matchall";
+
+// Polyfill for String.prototype.matchAll, in case it's not available (pre-ES2020)
 matchAllShim();
 
 export function jumpToPattern({

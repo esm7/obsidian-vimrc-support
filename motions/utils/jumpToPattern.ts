@@ -34,7 +34,7 @@ export function jumpToPattern({
  * Returns the index of (up to) the n-th instance of a pattern in a string after a given starting
  * index. If the pattern is not found at all, returns undefined.
  */
-export function getNthNextInstanceOfPattern({
+function getNthNextInstanceOfPattern({
   content,
   regex,
   startingIdx,
@@ -59,7 +59,7 @@ export function getNthNextInstanceOfPattern({
  * Returns the index of (up to) the nth-last instance of a pattern in a string before a given
  * starting index. If the pattern is not found at all, returns undefined.
  */
-export function getNthPreviousInstanceOfPattern({
+function getNthPreviousInstanceOfPattern({
   content,
   regex,
   startingIdx,

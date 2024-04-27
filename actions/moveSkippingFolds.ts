@@ -1,28 +1,28 @@
-import { Editor as ObsidianEditor } from "obsidian";
-
+import VimrcPlugin from "../main";
 import { ObsidianActionFn } from "../utils/obsidianVimCommand";
 
 export const moveDownSkippingFolds: ObsidianActionFn = (
-  obsidianEditor,
+  vimrcPlugin,
   cm,
   { repeat }
 ) => {
-  moveSkippingFolds(obsidianEditor, repeat, "down");
+  moveSkippingFolds(vimrcPlugin, repeat, "down");
 };
 
 export const moveUpSkippingFolds: ObsidianActionFn = (
-  obsidianEditor,
+  vimrcPlugin,
   cm,
   { repeat }
 ) => {
-  moveSkippingFolds(obsidianEditor, repeat, "up");
+  moveSkippingFolds(vimrcPlugin, repeat, "up");
 };
 
 function moveSkippingFolds(
-  obsidianEditor: ObsidianEditor,
+  vimrcPlugin: VimrcPlugin,
   repeat: number,
   direction: "up" | "down"
 ) {
+  const obsidianEditor = vimrcPlugin.getActiveObsidianEditor();
   let { line: oldLine, ch: oldCh } = obsidianEditor.getCursor();
   const commandName = direction === "up" ? "goUp" : "goDown";
   for (let i = 0; i < repeat; i++) {

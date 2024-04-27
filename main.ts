@@ -1,6 +1,7 @@
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
 import { App, EditorSelection, MarkdownView, Notice, Editor as ObsidianEditor, Plugin, PluginSettingTab, Setting } from 'obsidian';
 
+import { followLinkUnderCursor } from './actions/followLinkUnderCursor';
 import { moveDownSkippingFolds, moveUpSkippingFolds } from './actions/moveSkippingFolds';
 import { jumpToNextHeading, jumpToPreviousHeading } from './motions/jumpToHeading';
 import { jumpToNextLink, jumpToPreviousLink } from './motions/jumpToLink';
@@ -253,7 +254,7 @@ export default class VimrcPlugin extends Plugin {
 		return this.app.workspace.getActiveViewOfType(MarkdownView);
 	}
 
-	private getActiveObsidianEditor(): ObsidianEditor {
+	getActiveObsidianEditor(): ObsidianEditor {
 		return this.getActiveView().editor;
 	}
 
@@ -385,9 +386,9 @@ export default class VimrcPlugin extends Plugin {
 		defineObsidianVimMotion(vimObject, jumpToNextLink, 'gl');
 		defineObsidianVimMotion(vimObject, jumpToPreviousLink, 'gL');
 
-		const getActiveObsidianEditor: () => ObsidianEditor = this.getActiveObsidianEditor.bind(this);
-		defineObsidianVimAction(vimObject, getActiveObsidianEditor, moveDownSkippingFolds, 'zj');
-		defineObsidianVimAction(vimObject, getActiveObsidianEditor, moveUpSkippingFolds, 'zk');
+		defineObsidianVimAction(vimObject, this, moveDownSkippingFolds, 'zj');
+		defineObsidianVimAction(vimObject, this, moveUpSkippingFolds, 'zk');
+		defineObsidianVimAction(vimObject, this, followLinkUnderCursor, 'gf');
   }
 
 	defineSendKeys(vimObject: any) {
@@ -424,33 +425,36 @@ export default class VimrcPlugin extends Plugin {
 		});
 	}
 
+	executeObsidianCommand(commandName: string) {
+		const availableCommands = (this.app as any).commands.commands;
+		if (!(commandName in availableCommands)) {
+			throw new Error(`Command ${commandName} was not found, try 'obcommand' with no params to see in the developer console what's available`);
+		}
+		const view = this.getActiveView();
+		const editor = view.editor;
+		const command = availableCommands[commandName];
+		const {callback, checkCallback, editorCallback, editorCheckCallback} = command;
+		if (editorCheckCallback)
+			editorCheckCallback(false, editor, view);
+		else if (editorCallback)
+			editorCallback(editor, view);
+		else if (checkCallback)
+			checkCallback(false);
+		else if (callback)
+			callback();
+		else
+			throw new Error(`Command ${commandName} doesn't have an Obsidian callback`);
+	}
+
 	defineObCommand(vimObject: any) {
 		vimObject.defineEx('obcommand', '', async (cm: any, params: any) => {
-			const availableCommands = (this.app as any).commands.commands;
 			if (!params?.args?.length || params.args.length != 1) {
+				const availableCommands = (this.app as any).commands.commands;
 				console.log(`Available commands: ${Object.keys(availableCommands).join('\n')}`)
 				throw new Error(`obcommand requires exactly 1 parameter`);
 			}
-			let view = this.getActiveView();
-			let editor = view.editor;
-			const command = params.args[0];
-			if (command in availableCommands) {
-				let callback = availableCommands[command].callback;
-				let checkCallback = availableCommands[command].checkCallback;
-				let editorCallback = availableCommands[command].editorCallback;
-				let editorCheckCallback = availableCommands[command].editorCheckCallback;
-				if (editorCheckCallback)
-					editorCheckCallback(false, editor, view);
-				else if (editorCallback)
-					editorCallback(editor, view);
-				else if (checkCallback)
-					checkCallback(false);
-				else if (callback)
-					callback();
-				else
-					throw new Error(`Command ${command} doesn't have an Obsidian callback`);
-			} else
-				throw new Error(`Command ${command} was not found, try 'obcommand' with no params to see in the developer console what's available`);
+			const commandName = params.args[0];
+			this.executeObsidianCommand(commandName);
 		});
 	}
 

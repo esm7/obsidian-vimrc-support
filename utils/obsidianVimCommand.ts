@@ -3,12 +3,12 @@
  */
 
 import { Editor as CodeMirrorEditor } from "codemirror";
-import { Editor as ObsidianEditor } from "obsidian";
 
-import { ActionFn, MotionFn, VimApi } from "./vimApi";
+import VimrcPlugin from "../main";
+import { MotionFn, VimApi } from "./vimApi";
 
 export type ObsidianActionFn = (
-  obsidianEditor: ObsidianEditor,
+  vimrcPlugin: VimrcPlugin,
   cm: CodeMirrorEditor,
   actionArgs: { repeat: number },
   vimState: any
@@ -25,14 +25,12 @@ export function defineObsidianVimMotion(
 
 export function defineObsidianVimAction(
   vimObject: VimApi,
-  getActiveObsidianEditor: () => ObsidianEditor,
+  vimrcPlugin: VimrcPlugin,
   obsidianActionFn: ObsidianActionFn,
   mapping: string
 ) {
-  const actionFn: ActionFn = (cm, actionArgs, vimState) => {
-    const obsidianEditor = getActiveObsidianEditor();
-    obsidianActionFn(obsidianEditor, cm, actionArgs, vimState);
-  };
-  vimObject.defineAction(obsidianActionFn.name, actionFn);
+  vimObject.defineAction(obsidianActionFn.name, (cm, actionArgs, vimState) => {
+    obsidianActionFn(vimrcPlugin, cm, actionArgs, vimState);
+  });
   vimObject.mapCommand(mapping, "action", obsidianActionFn.name, undefined, {});
 }

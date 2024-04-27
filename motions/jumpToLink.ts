@@ -1,5 +1,5 @@
-import { MotionFn } from "../utils/defineObsidianVimMotion";
 import { jumpToPattern } from "../utils/jumpToPattern";
+import { MotionFn } from "../utils/vimApi";
 
 const LINK_REGEX = /\[\[[^\]\]]+?\]\]/g;
 

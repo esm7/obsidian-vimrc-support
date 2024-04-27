@@ -1,8 +1,9 @@
 import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
 import { App, EditorSelection, MarkdownView, Notice, Editor as ObsidianEditor, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { moveDownSkippingFolds, moveUpSkippingFolds } from './actions/moveSkippingFolds';
 import { jumpToNextHeading, jumpToPreviousHeading } from './motions/jumpToHeading';
 import { jumpToNextLink, jumpToPreviousLink } from './motions/jumpToLink';
-import { VimApi, defineObsidianVimMotion } from './utils/defineObsidianVimMotion';
+import { VimApi, defineObsidianVimAction, defineObsidianVimMotion } from './utils/vimApi';
 
 declare const CodeMirror: any;
 
@@ -382,34 +383,9 @@ export default class VimrcPlugin extends Plugin {
 		defineObsidianVimMotion(vimObject, jumpToNextLink, 'gl');
 		defineObsidianVimMotion(vimObject, jumpToPreviousLink, 'gL');
 
-		vimObject.defineAction('moveDownSkipFold', (cm, {repeat}) => {
-			const obsidianEditor = this.getActiveObsidianEditor();
-			let {line: oldLine, ch: oldCh} = obsidianEditor.getCursor();
-			for (let i = 0; i < repeat; i++) {
-				obsidianEditor.exec("goDown");
-				const {line: newLine, ch: newCh} = obsidianEditor.getCursor();
-				if (newLine === oldLine && newCh === oldCh) {
-					// Going down doesn't do anything anymore, stop now
-					return;
-				}
-				[oldLine, oldCh] = [newLine, newCh];
-			}
-		});
-		vimObject.mapCommand('zj', 'action', 'moveDownSkipFold', undefined, {});
-		vimObject.defineAction('moveUpSkipFold', (cm, {repeat}) => {
-			const obsidianEditor = this.getActiveObsidianEditor();
-			let {line: oldLine, ch: oldCh} = obsidianEditor.getCursor();
-			for (let i = 0; i < repeat; i++) {
-				obsidianEditor.exec("goUp");
-				const {line: newLine, ch: newCh} = obsidianEditor.getCursor();
-				if (newLine === oldLine && newCh === oldCh) {
-					// Going up doesn't do anything anymore, stop now
-					return;
-				}
-				[oldLine, oldCh] = [newLine, newCh];
-			}
-		});
-		vimObject.mapCommand('zk', 'action', 'moveUpSkipFold', undefined, {});
+		const getActiveObsidianEditor: () => ObsidianEditor = this.getActiveObsidianEditor.bind(this);
+		defineObsidianVimAction(vimObject, getActiveObsidianEditor, moveDownSkippingFolds, 'zj');
+		defineObsidianVimAction(vimObject, getActiveObsidianEditor, moveUpSkippingFolds, 'zk');
   }
 
 	defineSendKeys(vimObject: any) {

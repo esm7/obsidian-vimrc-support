@@ -5,7 +5,7 @@ import { followLinkUnderCursor } from './actions/followLinkUnderCursor';
 import { moveDownSkippingFolds, moveUpSkippingFolds } from './actions/moveSkippingFolds';
 import { jumpToNextHeading, jumpToPreviousHeading } from './motions/jumpToHeading';
 import { jumpToNextLink, jumpToPreviousLink } from './motions/jumpToLink';
-import { defineObsidianVimAction, defineObsidianVimMotion } from './utils/obsidianVimCommand';
+import { defineAndMapObsidianVimAction, defineAndMapObsidianVimMotion } from './utils/obsidianVimCommand';
 import { VimApi } from './utils/vimApi';
 
 declare const CodeMirror: any;
@@ -268,7 +268,7 @@ export default class VimrcPlugin extends Plugin {
 			var cmEditor = this.getCodeMirror(view);
 			if (cmEditor && !this.codeMirrorVimObject.loadedVimrc) {
 				this.defineBasicCommands(this.codeMirrorVimObject);
-				this.defineObsidianVimCommands(this.codeMirrorVimObject);
+				this.defineAndMapObsidianVimCommands(this.codeMirrorVimObject);
 				this.defineSendKeys(this.codeMirrorVimObject);
 				this.defineObCommand(this.codeMirrorVimObject);
 				this.defineSurround(this.codeMirrorVimObject);
@@ -379,16 +379,15 @@ export default class VimrcPlugin extends Plugin {
 		});
 	}
 
+  defineAndMapObsidianVimCommands(vimObject: VimApi) {
+		defineAndMapObsidianVimMotion(vimObject, jumpToNextHeading, 'gh');
+		defineAndMapObsidianVimMotion(vimObject, jumpToPreviousHeading, 'gH');
+		defineAndMapObsidianVimMotion(vimObject, jumpToNextLink, 'gl');
+		defineAndMapObsidianVimMotion(vimObject, jumpToPreviousLink, 'gL');
 
-  defineObsidianVimCommands(vimObject: VimApi) {
-		defineObsidianVimMotion(vimObject, jumpToNextHeading, 'gh');
-		defineObsidianVimMotion(vimObject, jumpToPreviousHeading, 'gH');
-		defineObsidianVimMotion(vimObject, jumpToNextLink, 'gl');
-		defineObsidianVimMotion(vimObject, jumpToPreviousLink, 'gL');
-
-		defineObsidianVimAction(vimObject, this, moveDownSkippingFolds, 'zj');
-		defineObsidianVimAction(vimObject, this, moveUpSkippingFolds, 'zk');
-		defineObsidianVimAction(vimObject, this, followLinkUnderCursor, 'gf');
+		defineAndMapObsidianVimAction(vimObject, this, moveDownSkippingFolds, 'zj');
+		defineAndMapObsidianVimAction(vimObject, this, moveUpSkippingFolds, 'zk');
+		defineAndMapObsidianVimAction(vimObject, this, followLinkUnderCursor, 'gf');
   }
 
 	defineSendKeys(vimObject: any) {

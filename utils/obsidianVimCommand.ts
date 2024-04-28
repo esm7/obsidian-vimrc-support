@@ -14,7 +14,7 @@ export type ObsidianActionFn = (
   vimState: any
 ) => void;
 
-export function defineObsidianVimMotion(
+export function defineAndMapObsidianVimMotion(
   vimObject: VimApi,
   motionFn: MotionFn,
   mapping: string
@@ -23,7 +23,7 @@ export function defineObsidianVimMotion(
   vimObject.mapCommand(mapping, "motion", motionFn.name, undefined, {});
 }
 
-export function defineObsidianVimAction(
+export function defineAndMapObsidianVimAction(
   vimObject: VimApi,
   vimrcPlugin: VimrcPlugin,
   obsidianActionFn: ObsidianActionFn,

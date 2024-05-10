@@ -1,6 +1,9 @@
 import VimrcPlugin from "../main";
 import { ObsidianActionFn } from "../utils/obsidianVimCommand";
 
+/**
+ * Moves the cursor down `repeat` lines, skipping over folded sections.
+ */
 export const moveDownSkippingFolds: ObsidianActionFn = (
   vimrcPlugin,
   cm,
@@ -9,6 +12,9 @@ export const moveDownSkippingFolds: ObsidianActionFn = (
   moveSkippingFolds(vimrcPlugin, repeat, "down");
 };
 
+/**
+ * Moves the cursor up `repeat` lines, skipping over folded sections.
+ */
 export const moveUpSkippingFolds: ObsidianActionFn = (
   vimrcPlugin,
   cm,

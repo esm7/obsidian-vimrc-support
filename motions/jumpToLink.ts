@@ -6,6 +6,9 @@ const MARKDOWN_LINK_REGEX_STRING = "\\[[^\\]]+?\\]\\([^)]+?\\)";
 const LINK_REGEX_STRING = `${WIKILINK_REGEX_STRING}|${MARKDOWN_LINK_REGEX_STRING}`;
 const LINK_REGEX = new RegExp(LINK_REGEX_STRING, "g");
 
+/**
+ * Jumps to the repeat-th next link.
+*/
 export const jumpToNextLink: MotionFn = (cm, oldPosition, { repeat }) => {
   return jumpToPattern({
     cm,
@@ -16,6 +19,9 @@ export const jumpToNextLink: MotionFn = (cm, oldPosition, { repeat }) => {
   });
 };
 
+/**
+ * Jumps to the repeat-th previous link.
+ */
 export const jumpToPreviousLink: MotionFn = (cm, oldPosition, { repeat }) => {
   return jumpToPattern({
     cm,

@@ -380,8 +380,8 @@ export default class VimrcPlugin extends Plugin {
 	}
 
   defineAndMapObsidianVimCommands(vimObject: VimApi) {
-		defineAndMapObsidianVimMotion(vimObject, jumpToNextHeading, 'gh');
-		defineAndMapObsidianVimMotion(vimObject, jumpToPreviousHeading, 'gH');
+		defineAndMapObsidianVimMotion(vimObject, jumpToNextHeading, ']]');
+		defineAndMapObsidianVimMotion(vimObject, jumpToPreviousHeading, '[[');
 		defineAndMapObsidianVimMotion(vimObject, jumpToNextLink, 'gl');
 		defineAndMapObsidianVimMotion(vimObject, jumpToPreviousLink, 'gL');
 

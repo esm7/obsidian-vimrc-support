@@ -6,10 +6,10 @@ const HEADING_REGEX = /^#+ /gm;
 /**
  * Jumps to the repeat-th next heading.
  */
-export const jumpToNextHeading: MotionFn = (cm, oldPosition, { repeat }) => {
+export const jumpToNextHeading: MotionFn = (cm, cursorPosition, { repeat }) => {
   return jumpToPattern({
     cm,
-    oldPosition,
+    cursorPosition,
     repeat,
     regex: HEADING_REGEX,
     direction: "next",
@@ -21,12 +21,12 @@ export const jumpToNextHeading: MotionFn = (cm, oldPosition, { repeat }) => {
  */
 export const jumpToPreviousHeading: MotionFn = (
   cm,
-  oldPosition,
+  cursorPosition,
   { repeat }
 ) => {
   return jumpToPattern({
     cm,
-    oldPosition,
+    cursorPosition,
     repeat,
     regex: HEADING_REGEX,
     direction: "previous",

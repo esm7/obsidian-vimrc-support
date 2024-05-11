@@ -11,14 +11,13 @@ import { EditorPosition } from "obsidian";
 
 export type MotionFn = (
   cm: CodeMirrorEditor,
-  oldPosition: EditorPosition,
+  cursorPosition: EditorPosition, // called `head` in the API
   motionArgs: { repeat: number }
 ) => EditorPosition;
 
 export type ActionFn = (
   cm: CodeMirrorEditor,
   actionArgs: { repeat: number },
-  vimState: any
 ) => void;
 
 export type VimApi = {

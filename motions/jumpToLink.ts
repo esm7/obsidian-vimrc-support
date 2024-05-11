@@ -9,10 +9,10 @@ const LINK_REGEX = new RegExp(LINK_REGEX_STRING, "g");
 /**
  * Jumps to the repeat-th next link.
 */
-export const jumpToNextLink: MotionFn = (cm, oldPosition, { repeat }) => {
+export const jumpToNextLink: MotionFn = (cm, cursorPosition, { repeat }) => {
   return jumpToPattern({
     cm,
-    oldPosition,
+    cursorPosition,
     repeat,
     regex: LINK_REGEX,
     direction: "next",
@@ -22,10 +22,10 @@ export const jumpToNextLink: MotionFn = (cm, oldPosition, { repeat }) => {
 /**
  * Jumps to the repeat-th previous link.
  */
-export const jumpToPreviousLink: MotionFn = (cm, oldPosition, { repeat }) => {
+export const jumpToPreviousLink: MotionFn = (cm, cursorPosition, { repeat }) => {
   return jumpToPattern({
     cm,
-    oldPosition,
+    cursorPosition,
     repeat,
     regex: LINK_REGEX,
     direction: "previous",

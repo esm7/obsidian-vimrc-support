@@ -6,90 +6,97 @@ import { shim as matchAllShim } from "string.prototype.matchall";
 matchAllShim();
 
 /**
- * Returns the position of the repeat-th instance of a pattern from a given starting position, in
- * the given direction; looping to the other end of the document when reaching one end.
+ * Returns the position of the repeat-th instance of a pattern from a given cursor position, in the
+ * given direction; looping to the other end of the document when reaching one end. Returns the
+ * original cursor position if no match is found.
  *
- * Under the hood, we avoid repeated loops around the document by using modulo arithmetic.
+ * Under the hood, to avoid repeated loops of the document: we get all matches at once, order them
+ * according to `direction` and `cursorPosition`, and use modulo arithmetic to return the
+ * appropriate match.
  */
 export function jumpToPattern({
   cm,
-  oldPosition,
+  cursorPosition,
   repeat,
   regex,
   direction,
 }: {
   cm: CodeMirrorEditor;
-  oldPosition: EditorPosition;
+  cursorPosition: EditorPosition;
   repeat: number;
   regex: RegExp;
   direction: "next" | "previous";
 }): EditorPosition {
   const content = cm.getValue();
-  const startingIdx = cm.indexFromPos(oldPosition);
-  const findNthMatchFn =
-    direction === "next" ? findNthNextRegexMatch : findNthPreviousRegexMatch;
-  const matchIdx = findNthMatchFn({ content, regex, startingIdx, n: repeat });
+  const cursorIdx = cm.indexFromPos(cursorPosition);
+  const orderedMatches = getOrderedMatches({
+    content,
+    regex,
+    cursorIdx,
+    direction,
+  });
+  const effectiveRepeat = (repeat % orderedMatches.length) || orderedMatches.length;
+  const matchIdx = orderedMatches[effectiveRepeat - 1]?.index;
   if (matchIdx === undefined) {
-    return oldPosition;
+    return cursorPosition;
   }
-  const newPosition = cm.posFromIndex(matchIdx);
-  return newPosition;
+  const newCursorPosition = cm.posFromIndex(matchIdx);
+  return newCursorPosition;
 }
 
 /**
- * Returns the index (from the start of the content) of the nth-next instance of a pattern after a
- * given starting index.
- *
- * "Loops" to the top of the document when the bottom is reached; under the hood, we avoid repeated
- * loops by using modulo arithmetic.
+ * Returns an ordered array of all matches of a regex in a string in the given direction from the
+ * cursor index (looping around to the other end of the document when reaching one end).
  */
-function findNthNextRegexMatch({
+function getOrderedMatches({
   content,
   regex,
-  startingIdx,
-  n,
+  cursorIdx,
+  direction,
 }: {
   content: string;
   regex: RegExp;
-  startingIdx: number;
-  n: number;
-}): number | undefined {
-  const globalRegex = makeGlobalRegex(regex);
-  const allMatches = [...content.matchAll(globalRegex)];
-  const previousMatches = allMatches.filter((match) => match.index <= startingIdx);
-  const nextMatches = allMatches.filter((match) => match.index > startingIdx);
-  const nModulo = n % allMatches.length;
-  const effectiveN = nModulo === 0 ? allMatches.length : nModulo;
-  if (effectiveN <= nextMatches.length) {
-    return nextMatches[effectiveN - 1].index;
+  cursorIdx: number;
+  direction: "next" | "previous";
+}): RegExpExecArray[] {
+  const { previousMatches, currentMatches, nextMatches } = getAndGroupMatches(
+    content,
+    regex,
+    cursorIdx
+  );
+  if (direction === "next") {
+    return [...nextMatches, ...previousMatches, ...currentMatches];
   }
-  return previousMatches[effectiveN - nextMatches.length - 1].index;
+  return [
+    ...previousMatches.reverse(),
+    ...nextMatches.reverse(),
+    ...currentMatches.reverse(),
+  ];
 }
 
 /**
- * Returns the index (from the start of the content) of the nth-previous instance of a pattern
- * before a given starting index.
- *
- * "Loops" to the bottom of the document when the top is reached; under the hood, we avoid repeated
- * loops by using modulo arithmetic.
+ * Finds all matches of a regex in a string and groups them by their positions relative to the
+ * cursor.
  */
-function findNthPreviousRegexMatch({
-  content,
-  regex,
-  startingIdx,
-  n,
-}: {
-  content: string;
-  regex: RegExp;
-  startingIdx: number;
-  n: number;
-}): number | undefined {
+function getAndGroupMatches(
+  content: string,
+  regex: RegExp,
+  cursorIdx: number
+): {
+  previousMatches: RegExpExecArray[];
+  currentMatches: RegExpExecArray[];
+  nextMatches: RegExpExecArray[];
+} {
   const globalRegex = makeGlobalRegex(regex);
   const allMatches = [...content.matchAll(globalRegex)];
-  const previousMatches = allMatches.filter((match) => match.index < startingIdx);
-  const nextMatches = allMatches.filter((match) => match.index >= startingIdx);
-  const match = getNthPreviousMatch(previousMatches, nextMatches, n);
-  return match?.index;
+  const previousMatches = allMatches.filter(
+    (match) => match.index < cursorIdx && !isCursorOnMatch(match, cursorIdx)
+  );
+  const currentMatches = allMatches.filter((match) =>
+    isCursorOnMatch(match, cursorIdx)
+  );
+  const nextMatches = allMatches.filter((match) => match.index > cursorIdx);
+  return { previousMatches, currentMatches, nextMatches };
 }
 
 function makeGlobalRegex(regex: RegExp): RegExp {
@@ -102,28 +109,6 @@ function getGlobalFlags(regex: RegExp): string {
   return flags.includes("g") ? flags : `${flags}g`;
 }
 
-function getNthPreviousMatch(
-  previousMatches: RegExpExecArray[],
-  nextMatches: RegExpExecArray[],
-  n: number
-): RegExpExecArray | undefined {
-  const numMatches = previousMatches.length + nextMatches.length;
-  const effectiveN = n % numMatches; // every `numMatches` is a full loop
-  if (effectiveN <= previousMatches.length) {
-    return getNthItemFromEnd(previousMatches, effectiveN);
-  }
-  return getNthItemFromEnd(nextMatches, effectiveN - previousMatches.length);
-}
-
-/**
- * Returns the nth (1-indexed) item from the end of an array. Expects 1 <= n <= items.length, but
- * just returns undefined if n is out of bounds.
- */
-function getNthItemFromEnd<T>(items: T[], n: number): T | undefined {
-  const numItems = items.length;
-  if (n < 1 || n > numItems) {
-    console.warn(`Invalid n: ${n} for array of length ${numItems}`);
-    return undefined;
-  }
-  return items[numItems - n];
+function isCursorOnMatch(match: RegExpExecArray, cursorIdx: number): boolean {
+  return match.index <= cursorIdx && cursorIdx < match.index + match[0].length;
 }

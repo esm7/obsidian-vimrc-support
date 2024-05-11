@@ -8,10 +8,9 @@ import VimrcPlugin from "../main";
 import { MotionFn, VimApi } from "./vimApi";
 
 export type ObsidianActionFn = (
-  vimrcPlugin: VimrcPlugin,
+  vimrcPlugin: VimrcPlugin,  // Included so we can run Obsidian commands as part of the action
   cm: CodeMirrorEditor,
   actionArgs: { repeat: number },
-  vimState: any
 ) => void;
 
 export function defineAndMapObsidianVimMotion(
@@ -29,8 +28,8 @@ export function defineAndMapObsidianVimAction(
   obsidianActionFn: ObsidianActionFn,
   mapping: string
 ) {
-  vimObject.defineAction(obsidianActionFn.name, (cm, actionArgs, vimState) => {
-    obsidianActionFn(vimrcPlugin, cm, actionArgs, vimState);
+  vimObject.defineAction(obsidianActionFn.name, (cm, actionArgs) => {
+    obsidianActionFn(vimrcPlugin, cm, actionArgs);
   });
   vimObject.mapCommand(mapping, "action", obsidianActionFn.name, undefined, {});
 }

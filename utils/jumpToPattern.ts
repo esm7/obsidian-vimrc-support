@@ -1,9 +1,5 @@
 import { Editor as CodeMirrorEditor } from "codemirror";
 import { EditorPosition } from "obsidian";
-import { shim as matchAllShim } from "string.prototype.matchall";
-
-// Polyfill for String.prototype.matchAll, in case it's not available (pre-ES2020)
-matchAllShim();
 
 /**
  * Returns the position of the repeat-th instance of a pattern from a given cursor position, in the

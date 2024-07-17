@@ -75,6 +75,13 @@ Commands that fail don't generate any visible error for now.
 CodeMirror's Vim mode has some limitations and bugs and not all commands will work like you'd expect.
 In some cases you can find workarounds by experimenting, and the easiest way to do that is by trying interactively rather than via the Vimrc file.
 
+Finally, this plugin also provides the following motions/mappings by default:
+
+- `[[` and `]]` to jump to the previous and next Markdown heading.
+- `zk` and `zj` to move up and down while skipping folds.
+- `gl` and `gL` to jump to the next and previous link.
+- `gf` to open the link or file under the cursor (temporarily moving the cursor if necessary—e.g. if it's on the first square bracket of a [[Wikilink]]).
+
 ## Installation
 
 In the Obsidian.md settings under "Community plugins", click on "Turn on community plugins", then browse to this plugin.
@@ -284,7 +291,7 @@ The `jsfile` should be placed in your vault (alongside, e.g., your markdown file
 
 As above, the code running as part of `jsfile` has the arguments `editor: Editor`, `view: MarkdownView` and `selection: EditorSelection`.
 
-Here's an example from my own `.obsidian.vimrc` that maps `]]` and `[[` to jump to the next/previous Markdown header:
+Here's an example `.obsidian.vimrc` entry that maps `]]` and `[[` to jump to the next/previous Markdown heading. Note that `]]` and `[[` are already provided by default in this plugin, but this is a good example of how to use `jsfile`:
 
 ```
 exmap nextHeading jsfile mdHelpers.js {jumpHeading(true)}

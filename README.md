@@ -419,6 +419,13 @@ Note that the above snippet uses powerline glygh for the triangular shape, so yo
 
 ## Changelog
 
+### 0.10.0
+
+- Most notably, support for *many* new default mappings, see [here](https://github.com/esm7/obsidian-vimrc-support/pull/222) -- thanks @alythobani for this great contribution!
+- Fixed https://github.com/esm7/obsidian-vimrc-support/issues/228.
+- Added a license file, at last!
+
+
 ### 0.9.0
 
 Multiple fixes and improvements, all contributed by @jiyee - thank you!

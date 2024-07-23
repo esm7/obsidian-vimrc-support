@@ -4,12 +4,11 @@ In this document I will collect some of my and user-contributed ideas for how to
 
 If you have interesting snippets, please contribute by opening a pull request!
 
+Note that these examples are included for demonstration purposes, and many of them are now provided by default in this plugin. Their actual implementations can be found under [`motions/`](https://github.com/esm7/obsidian-vimrc-support/blob/master/motions/), which you can also use as reference (either for your own custom motions, or if you wish to submit a PR for a new motion to be provided by this plugin).
 
-## Jump to Next/Prev Markdown Header
+## Jump to Next/Previous Markdown Heading
 
-To map `]]` and `[[` to next/prev markdown header, I use the following.
-
-In a file I call `mdHelpers.js`, put this:
+In a file you can call `mdHelpers.js`, put this:
 
 ```js
 // Taken from https://stackoverflow.com/questions/273789/is-there-a-version-of-javascripts-string-indexof-that-allows-for-regular-expr

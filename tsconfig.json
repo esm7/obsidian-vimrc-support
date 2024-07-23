@@ -4,16 +4,16 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     "module": "ESNext",
-    "target": "es5",
+    "target": "ES2020",
     "allowJs": true,
     "noImplicitAny": true,
     "moduleResolution": "node",
+    "downlevelIteration": true,
     "importHelpers": true,
     "lib": [
       "dom",
-      "es5",
       "scripthost",
-      "es2015"
+      "ES2020"
     ]
   },
   "include": [

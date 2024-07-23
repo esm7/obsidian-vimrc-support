@@ -159,6 +159,8 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 	async updateVimEvents() {
+		if (!(this.app as Any).isVimEnabled())
+			return;
 		let view = this.getActiveView();
 		if (view) {
 			const cmEditor = this.getCodeMirror(view);

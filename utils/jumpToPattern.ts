@@ -9,28 +9,34 @@ import { EditorPosition } from "obsidian";
  * Under the hood, to avoid repeated loops of the document: we get all matches at once, order them
  * according to `direction` and `cursorPosition`, and use modulo arithmetic to return the
  * appropriate match.
+ *
+ * @param cm The CodeMirror editor instance.
+ * @param cursorPosition The current cursor position.
+ * @param repeat The number of times to repeat the jump (e.g. 1 to jump to the very next match). Is
+ * modulo-ed for efficiency.
+ * @param regex The regex pattern to jump to.
+ * @param filterMatch Optional filter function to run on the regex matches. Return false to ignore
+ * a given match.
+ * @param direction The direction to jump in.
  */
 export function jumpToPattern({
   cm,
   cursorPosition,
   repeat,
   regex,
+  filterMatch = () => true,
   direction,
 }: {
   cm: CodeMirrorEditor;
   cursorPosition: EditorPosition;
   repeat: number;
   regex: RegExp;
+  filterMatch?: (match: RegExpExecArray) => boolean;
   direction: "next" | "previous";
 }): EditorPosition {
   const content = cm.getValue();
   const cursorIdx = cm.indexFromPos(cursorPosition);
-  const orderedMatches = getOrderedMatches({
-    content,
-    regex,
-    cursorIdx,
-    direction,
-  });
+  const orderedMatches = getOrderedMatches({ content, regex, cursorIdx, filterMatch, direction });
   const effectiveRepeat = (repeat % orderedMatches.length) || orderedMatches.length;
   const matchIdx = orderedMatches[effectiveRepeat - 1]?.index;
   if (matchIdx === undefined) {
@@ -48,17 +54,20 @@ function getOrderedMatches({
   content,
   regex,
   cursorIdx,
+  filterMatch,
   direction,
 }: {
   content: string;
   regex: RegExp;
   cursorIdx: number;
+  filterMatch: (match: RegExpExecArray) => boolean;
   direction: "next" | "previous";
 }): RegExpExecArray[] {
   const { previousMatches, currentMatches, nextMatches } = getAndGroupMatches(
     content,
     regex,
-    cursorIdx
+    cursorIdx,
+    filterMatch
   );
   if (direction === "next") {
     return [...nextMatches, ...previousMatches, ...currentMatches];
@@ -77,20 +86,19 @@ function getOrderedMatches({
 function getAndGroupMatches(
   content: string,
   regex: RegExp,
-  cursorIdx: number
+  cursorIdx: number,
+  filterMatch: (match: RegExpExecArray) => boolean
 ): {
   previousMatches: RegExpExecArray[];
   currentMatches: RegExpExecArray[];
   nextMatches: RegExpExecArray[];
 } {
   const globalRegex = makeGlobalRegex(regex);
-  const allMatches = [...content.matchAll(globalRegex)];
+  const allMatches = [...content.matchAll(globalRegex)].filter(filterMatch);
   const previousMatches = allMatches.filter(
-    (match) => match.index < cursorIdx && !isCursorOnMatch(match, cursorIdx)
+    (match) => match.index < cursorIdx && !isWithinMatch(match, cursorIdx)
   );
-  const currentMatches = allMatches.filter((match) =>
-    isCursorOnMatch(match, cursorIdx)
-  );
+  const currentMatches = allMatches.filter((match) => isWithinMatch(match, cursorIdx));
   const nextMatches = allMatches.filter((match) => match.index > cursorIdx);
   return { previousMatches, currentMatches, nextMatches };
 }
@@ -105,6 +113,6 @@ function getGlobalFlags(regex: RegExp): string {
   return flags.includes("g") ? flags : `${flags}g`;
 }
 
-function isCursorOnMatch(match: RegExpExecArray, cursorIdx: number): boolean {
-  return match.index <= cursorIdx && cursorIdx < match.index + match[0].length;
+export function isWithinMatch(match: RegExpExecArray, index: number): boolean {
+  return match.index <= index && index < match.index + match[0].length;
 }

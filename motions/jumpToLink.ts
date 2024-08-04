@@ -14,9 +14,10 @@ const LINK_REGEX = new RegExp(LINK_REGEX_STRING, "g");
 /**
  * Jumps to the repeat-th next link.
  *
- * Note that since `jumpToPattern` uses `String.matchAll`, which internally updates `lastIndex`
- * after each match, it won't catch standalone URLs within wikilinks / markdown links
- * (which should be a good thing in most cases).
+ * Note that `jumpToPattern` uses `String.matchAll`, which internally updates `lastIndex` after each
+ * match; and that `LINK_REGEX` matches wikilinks / markdown links first. So, this won't catch
+ * non-standalone URLs (e.g. the URL in a markdown link). This should be a good thing in most cases;
+ * otherwise it could be tedious (as a user) for each markdown link to contain two jumpable spots.
 */
 export const jumpToNextLink: MotionFn = (cm, cursorPosition, { repeat }) => {
   return jumpToPattern({

@@ -1,6 +1,6 @@
 {
   "name": "obsidian-vimrc-support",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Auto-load a startup file with Obsidian Vim commands.",
   "main": "main.js",
   "scripts": {

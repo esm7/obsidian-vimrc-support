@@ -116,6 +116,9 @@ export default class VimrcPlugin extends Plugin {
 			this.registerYankEvents(w);
 		})
 
+		this.prepareChordDisplay();
+		this.prepareVimModeDisplay();
+
 		// Two events cos
 		// this don't trigger on loading/reloading obsidian with note opened
 		this.app.workspace.on("active-leaf-change", async () => {
@@ -279,9 +282,6 @@ export default class VimrcPlugin extends Plugin {
 				this.defineSource(this.codeMirrorVimObject);
 
 				this.loadVimCommands(vimCommands);
-
-				this.prepareChordDisplay();
-				this.prepareVimModeDisplay();
 
 				// Make sure that we load it just once per CodeMirror instance.
 				// This is supposed to work because the Vim state is kept at the keymap level, hopefully

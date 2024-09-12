@@ -180,7 +180,7 @@ map sb :surround_brackets
 map s( :surround_brackets
 map s) :surround_brackets
 map s[ :surround_square_brackets
-map s[ :surround_square_brackets
+map s] :surround_square_brackets
 map s{ :surround_curly_brackets
 map s} :surround_curly_brackets
 ```

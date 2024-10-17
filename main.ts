@@ -494,12 +494,10 @@ export default class VimrcPlugin extends Plugin {
 					chosenSelection = {anchor: wordAt.from, head: wordAt.to};
 				}
 			}
-            let currText;
-            if (editor.posToOffset(chosenSelection.anchor) > editor.posToOffset(chosenSelection.head)) {
-                currText = editor.getRange(chosenSelection.head, chosenSelection.anchor);
-            } else {
-                currText = editor.getRange(chosenSelection.anchor, chosenSelection.head);
-            }
+			if (editor.posToOffset(chosenSelection.anchor) > editor.posToOffset(chosenSelection.head)) {
+				[chosenSelection.anchor, chosenSelection.head] = [chosenSelection.head, chosenSelection.anchor];
+			}
+			let currText = editor.getRange(chosenSelection.anchor, chosenSelection.head);
 			editor.replaceRange(beginning + currText + ending, chosenSelection.anchor, chosenSelection.head);
 			// If no selection, place cursor between beginning and ending
 			if (editor.posToOffset(chosenSelection.anchor) === editor.posToOffset(chosenSelection.head)) {

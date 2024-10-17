@@ -1,5 +1,9 @@
 # Obsidian Vimrc Support Plugin
 
+> [!IMPORTANT]
+> In Obsidian 1.7.2 and beyond, `<CR>` needs to be added for normal mode mappings, e.g. `nmap <F9> :nohl<CR>` instead of `nmap <F9> :nohl`.
+> This is due to a breaking change in the underlying `codemirror-vim` library.
+
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/esm7)
 
 This plugin loads a file of Vim commands from `VAULT_ROOT/.obsidian.vimrc`.
@@ -33,7 +37,7 @@ nmap k gk
 nmap H ^
 nmap L $
 " Quickly remove search highlights
-nmap <F9> :nohl
+nmap <F9> :nohl<CR>
 
 " Yank to system clipboard
 set clipboard=unnamed
@@ -41,9 +45,9 @@ set clipboard=unnamed
 " Go back and forward with Ctrl+O and Ctrl+I
 " (make sure to remove default Obsidian shortcuts for these to work)
 exmap back obcommand app:go-back
-nmap <C-o> :back
+nmap <C-o> :back<CR>
 exmap forward obcommand app:go-forward
-nmap <C-i> :forward
+nmap <C-i> :forward<CR>
 ```
 
 ## Supported Commands
@@ -140,7 +144,7 @@ You now have a simple (0 argument) Ex command named `back` that goes back in Obs
 To summarize, here's how you map `C-o` to Back:
 ```
 exmap back obcommand app:go-back
-nmap <C-o> :back
+nmap <C-o> :back<CR>
 ```
 
 Note how `exmap` lists command names without colons and in `nmap` the colon is required.
@@ -170,19 +174,19 @@ exmap surround_square_brackets surround [ ]
 exmap surround_curly_brackets surround { }
 
 " NOTE: must use 'map' and not 'nmap'
-map [[ :surround_wiki
+map [[ :surround_wiki<CR>
 nunmap s
 vunmap s
-map s" :surround_double_quotes
-map s' :surround_single_quotes
-map s` :surround_backticks
-map sb :surround_brackets
-map s( :surround_brackets
-map s) :surround_brackets
-map s[ :surround_square_brackets
-map s[ :surround_square_brackets
-map s{ :surround_curly_brackets
-map s} :surround_curly_brackets
+map s" :surround_double_quotes<CR>
+map s' :surround_single_quotes<CR>
+map s` :surround_backticks<CR>
+map sb :surround_brackets<CR>
+map s( :surround_brackets<CR>
+map s) :surround_brackets<CR>
+map s[ :surround_square_brackets<CR>
+map s[ :surround_square_brackets<CR>
+map s{ :surround_curly_brackets<CR>
+map s} :surround_curly_brackets<CR>
 ```
 
 Usage:
@@ -215,20 +219,20 @@ Using `obcommand`, it is possible to emulate some additional Vim commands that a
 ```vim
 " Emulate Folding https://vimhelp.org/fold.txt.html#fold-commands
 exmap togglefold obcommand editor:toggle-fold
-nmap zo :togglefold
-nmap zc :togglefold
-nmap za :togglefold
+nmap zo :togglefold<CR>
+nmap zc :togglefold<CR>
+nmap za :togglefold<CR>
 
 exmap unfoldall obcommand editor:unfold-all
-nmap zR :unfoldall
+nmap zR :unfoldall<CR>
 
 exmap foldall obcommand editor:fold-all
-nmap zM :foldall
+nmap zM :foldall<CR>
 
 exmap tabnext obcommand workspace:next-tab
-nmap gt :tabnext
+nmap gt :tabnext<CR>
 exmap tabprev obcommand workspace:previous-tab
-nmap gT :tabprev
+nmap gT :tabprev<CR>
 
 ```
 
@@ -280,7 +284,7 @@ If you want, you can make this an Ex command using `exmap`:
 
 ```
 exmap logCursor jscommand { console.log(editor.getCursor()); }
-nmap <C-q> :logCursor
+nmap <C-q> :logCursor<CR>
 ```
 
 #### JSCommand - JSFile
@@ -295,8 +299,8 @@ Here's an example `.obsidian.vimrc` entry that maps `]]` and `[[` to jump to the
 ```
 exmap nextHeading jsfile mdHelpers.js {jumpHeading(true)}
 exmap prevHeading jsfile mdHelpers.js {jumpHeading(false)}
-nmap ]] :nextHeading
-nmap [[ :prevHeading
+nmap ]] :nextHeading<CR>
+nmap [[ :prevHeading<CR>
 ```
 
 See [here](JsSnippets.md) for the full example, and please contribute your own!

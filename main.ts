@@ -463,7 +463,7 @@ export default class VimrcPlugin extends Plugin {
 		// Function to surround selected text or highlighted word.
 		var surroundFunc = (params: string[]) => {
 			var editor = this.getActiveView().editor;
-			if (!params.length) {
+			if (!params?.length) {
 				throw new Error("surround requires exactly 2 parameters: prefix and postfix text.");
 			}
 			let newArgs = params.join(" ").match(/(\\.|[^\s\\\\]+)+/g);

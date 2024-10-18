@@ -1,8 +1,9 @@
 # Obsidian Vimrc Support Plugin
 
 > [!IMPORTANT]
-> In Obsidian 1.7.2 and beyond, `<CR>` needs to be added for normal mode mappings, e.g. `nmap <F9> :nohl<CR>` instead of `nmap <F9> :nohl`.
+> In Obsidian 1.7.2 and beyond, `<CR>` needs to be added for normal mode Ex command mappings, e.g. `nmap <F9> :nohl<CR>` instead of `nmap <F9> :nohl` (similarly to "real" Vim).
 > This is due to a breaking change in the underlying `codemirror-vim` library.
+> Normal mode movements, e.g. `map j gj`, remain as-is.
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/esm7)
 

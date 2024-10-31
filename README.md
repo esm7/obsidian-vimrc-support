@@ -7,7 +7,7 @@
 
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/esm7)
 
-This plugin loads a file of Vim commands from `VAULT_ROOT/.obsidian.vimrc`.
+This plugin loads a file of Vim commands from `path/to/VaultName/.obsidian.vimrc`.
 For users of the Obsidian.md Vim mode, this is very useful for making various settings (most notably keymaps) persist.
 
 Note that this plugin is **not** the Vim support of Obsidian -- that support is built-in and you can perfectly use Obsidian in Vim mode without this plugin.
@@ -23,7 +23,7 @@ Anyone who wishes to take over, please message me.
 
 First and foremost, make sure you have the Obsidian Vim key bindings turned on -- see Editor -> Vim key bindings.
 
-Now to keep some of your Vim settings permanent, install this plugin and put a file named `.obsidian.vimrc` in your vault root.
+Now to keep some of your Vim settings permanent, install this plugin and put a file named `.obsidian.vimrc` in your vault root (*not* inside the `.obsidian` directory).
 If you're using multiple vaults, you'll need this file on each one.
 
 **For iOS/iPadOS users**, it's highly recommended to set "Paste from Other Apps" of Obsidian to Allow, so there won't be annoying popups.
@@ -423,6 +423,10 @@ div.status-bar-item.vimrc-support-vim-mode[data-vim-mode="replace"] {
 Note that the above snippet uses powerline glygh for the triangular shape, so you need to install a [powerline font](https://github.com/powerline/fonts) to display correctly. And of course, feel free to change the CSS variables to whatever color palette you want!
 
 ## Changelog
+
+### Not yet released
+
+- Fixed https://github.com/esm7/obsidian-vimrc-support/pull/246 (thanks @baodrate!)
 
 ### 0.10.1
 

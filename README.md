@@ -5,6 +5,13 @@
 > This is due to a breaking change in the underlying `codemirror-vim` library.
 > Normal mode movements, e.g. `map j gj`, remain as-is.
 
+> [!NOTE]
+> **Maintainer Needed**
+> 
+> While I am still around for some urgent fixes, especially when the plugin stops working due to Obsidian API changes API, I am no longer able to give it the attention it deserves.
+> 
+> Anyone who wishes to take over, please message me.
+
 [!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/esm7)
 
 This plugin loads a file of Vim commands from `path/to/VaultName/.obsidian.vimrc`.
@@ -12,12 +19,6 @@ For users of the Obsidian.md Vim mode, this is very useful for making various se
 
 Note that this plugin is **not** the Vim support of Obsidian -- that support is built-in and you can perfectly use Obsidian in Vim mode without this plugin.
 This plugin merely implements the ability to load a persistent configuration and adds a few extras.
-
-## Maintainer Needed
-
-While I am still around for some urgent fixes, especially when the plugin stops working due to Obsidian API changes API, I am no longer able to give it the attention it deserves.
-
-Anyone who wishes to take over, please message me.
 
 ## Usage
 
@@ -424,7 +425,7 @@ Note that the above snippet uses powerline glygh for the triangular shape, so yo
 
 ## Changelog
 
-### Not yet released
+### 0.10.2
 
 - Fixed https://github.com/esm7/obsidian-vimrc-support/pull/246 (thanks @baodrate!)
 

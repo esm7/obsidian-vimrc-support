@@ -6,9 +6,9 @@
 > Normal mode movements, e.g. `map j gj`, remain as-is.
 
 > [!NOTE]
-> **Maintainer Needed**
+> **Maintainer Needed!**
 > 
-> While I am still around for some urgent fixes, especially when the plugin stops working due to Obsidian API changes API, I am no longer able to give it the attention it deserves.
+> While I am still around for some urgent fixes, especially when the plugin stops working due to Obsidian API changes, I am no longer able to give it the attention it deserves.
 > 
 > Anyone who wishes to take over, please message me.
 

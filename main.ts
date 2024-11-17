@@ -71,6 +71,7 @@ export default class VimrcPlugin extends Plugin {
 	private lastYankBuffer: string[] = [""];
 	private lastSystemClipboard = "";
 	private yankToSystemClipboard: boolean = false;
+	private registeredYankEventsWindows: Set<Window> = new Set();
 	private currentKeyChord: any = [];
 	private vimChordStatusBar: HTMLElement = null;
 	private vimStatusBar: HTMLElement = null;
@@ -115,6 +116,9 @@ export default class VimrcPlugin extends Plugin {
 		this.app.workspace.on("window-open", (workspaceWindow, w) => {
 			this.registerYankEvents(w);
 		})
+		this.app.workspace.on("window-close", (workspaceWindow, w) => {
+			this.registeredYankEventsWindows.delete(w);
+		})
 
 		this.prepareChordDisplay();
 		this.prepareVimModeDisplay();
@@ -123,13 +127,12 @@ export default class VimrcPlugin extends Plugin {
 		// this don't trigger on loading/reloading obsidian with note opened
 		this.app.workspace.on("active-leaf-change", async () => {
 			this.updateSelectionEvent();
-
 			this.updateVimEvents();
+			this.registerYankEvents(activeWindow);
 		});
 		// and this don't trigger on opening same file in new pane
 		this.app.workspace.on("file-open", async () => {
 			this.updateSelectionEvent();
-
 			this.updateVimEvents();
 		});
 
@@ -137,6 +140,8 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 	registerYankEvents(win: Window) {
+		if (this.registeredYankEventsWindows.has(win))
+			return;
 		this.registerDomEvent(win.document, 'click', () => {
 			this.captureYankBuffer(win);
 		});
@@ -146,6 +151,7 @@ export default class VimrcPlugin extends Plugin {
 		this.registerDomEvent(win.document, 'focusin', () => {
 			this.captureYankBuffer(win);
 		})
+		this.registeredYankEventsWindows.add(win)
 	}
 
 	async updateSelectionEvent() {

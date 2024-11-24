@@ -100,9 +100,9 @@ If you want to support the development of this plugin, please consider to [buy m
 
 ## "Please implement \[some Vim feature here\]..."
 
-I'd like to emphasize again that this plugin is a tweak to Obsidian's built-in Vim mode, which is in turn mostly the [Vim mode of CodeMirror](https://codemirror.net/demo/vim.html). And while I am personally very fond of helping everybody make use of Vim modes everywhere, this plugin is often not the best place to implement some types of features.
+I'd like to emphasize again that this plugin is a tweak to Obsidian's built-in Vim mode, which is in turn mostly the [`codemirror-vim` extension for CodeMirror](https://raw.githack.com/replit/codemirror-vim/master/dev/web-demo.html). And while I am personally very fond of helping everybody make use of Vim modes everywhere, this plugin is often not the best place to implement some types of features.
 
-1. Vim editor features (e.g. new motions) would best be implemented in CodeMirror, so other editors using this component would enjoy them too! Please consider submitting issues or pull requests [there](https://github.com/codemirror/CodeMirror/) first.
+1. Vim editor features (e.g. new motions) would best be implemented in `codemirror-vim`, so other editors using this component would enjoy them too! Please consider submitting issues or pull requests [there](https://github.com/replit/codemirror-vim) first.
 2. Features that are already implemented by other Obsidian plugins are best to stay in these plugins. Please consider asking these plugin authors to add Vim support for their features (using the CodeMirror API), or even better -- help them out :)
 
 Having said that, adding features here in this plugin is often very easy thanks to the CodeMirror [API for extending its Vim mode](https://codemirror.net/doc/manual.html#vimapi_extending), so as the path of least resistance I will occassionally implement some requested Vim features and be happy to accept PRs.

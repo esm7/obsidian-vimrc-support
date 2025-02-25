@@ -186,7 +186,7 @@ map sb :surround_brackets<CR>
 map s( :surround_brackets<CR>
 map s) :surround_brackets<CR>
 map s[ :surround_square_brackets<CR>
-map s[ :surround_square_brackets<CR>
+map s] :surround_square_brackets<CR>
 map s{ :surround_curly_brackets<CR>
 map s} :surround_curly_brackets<CR>
 ```

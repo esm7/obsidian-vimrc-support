@@ -521,7 +521,7 @@ export default class VimrcPlugin extends Plugin {
 			// Using the register for when this.yankToSystemClipboard == false
 			surroundFunc(
 				['[',
-				 '](' + vimObject.getRegisterController().getRegister('yank').keyBuffer + ")"]);
+				 '](' + vimObject.getRegisterController().getRegister('yank').keyBuffer[0].trim() + ")"]);
 		})
 
 		var editor = this.getActiveView().editor;

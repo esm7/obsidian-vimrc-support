@@ -20,6 +20,7 @@ type VimStatusPrompt = string;
 type VimStatusPromptMap = {
 	[status in vimStatus]: VimStatusPrompt;
 };
+type Timeoutlen = number;
 
 interface Settings {
 	vimrcFileName: string,
@@ -29,6 +30,7 @@ interface Settings {
 	capturedKeyboardMap: Record<string, string>,
 	supportJsCommands?: boolean
 	vimStatusPromptMap: VimStatusPromptMap;
+	timeoutlen: Timeoutlen;
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -38,6 +40,7 @@ const DEFAULT_SETTINGS: Settings = {
 	fixedNormalModeLayout: false,
 	capturedKeyboardMap: {},
 	supportJsCommands: false,
+	timeoutlen: 200, // 200ms as a Default
 	vimStatusPromptMap: {
 		normal: '🟢',
 		insert: '🟠',
@@ -79,6 +82,7 @@ export default class VimrcPlugin extends Plugin {
 	private customVimKeybinds: { [name: string]: boolean } = {};
 	private currentSelection: [EditorSelection] = null;
 	private isInsertMode: boolean = false;
+	private keyChordTimeout: NodeJS.Timeout | number = 0;
 
 	updateVimStatusBar() {
 		this.vimStatusBar.setText(
@@ -176,7 +180,7 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 	async updateVimEvents() {
-		if (!(this.app as Any).isVimEnabled())
+		if (!(this.app as any).isVimEnabled())
 			return;
 		let view = this.getActiveView();
 		if (view) {
@@ -601,6 +605,10 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 	onVimKeypress = async (vimKey: any) => {
+		// Clear the existing timeout so that the chord extends 
+		// so long as the keys are passed within the defined `timeoutlen`
+		clearTimeout(this.keyChordTimeout);
+
 		if (vimKey != "<Esc>") { // TODO figure out what to actually look for to exit commands.
 			this.currentKeyChord.push(vimKey);
 			if (this.customVimKeybinds[this.currentKeyChord.join("")] != undefined) { // Custom key chord exists.
@@ -619,6 +627,12 @@ export default class VimrcPlugin extends Plugin {
 			tempS += "-";
 		}
 		this.vimChordStatusBar?.setText(tempS);
+
+		// Set a timeout to clear the chord after settings.timeoutlen milliseconds.
+		this.keyChordTimeout = setTimeout(() => {
+			this.currentKeyChord = [];
+			this.vimChordStatusBar?.setText("");
+		}, this.settings.timeoutlen);
 	}
 
 	onVimCommandDone = async (reason: any) => {
@@ -740,6 +754,27 @@ class SettingsTab extends PluginSettingTab {
 					this.plugin.settings.vimrcFileName = value;
 					this.plugin.saveSettings();
 				})
+			});
+
+		new Setting(containerEl)
+			.setName('Vim chord timeout length')
+			.setDesc('Sets the timeoutlen in milliseconds which controls how long the editor waits for a complete key sequence.\nEnter a number between 0 and 5000 (milliseconds)')
+			.addText((text) => {
+				text.setPlaceholder('200'); // default suggestion
+				text.setValue(this.plugin.settings.timeoutlen.toString());
+				text.inputEl.addEventListener('change', (e: Event) => {
+				const input = (e.target as HTMLInputElement).value;
+				const num = parseInt(input, 10);
+				// first we check if the parsed value is a valid number within 0 and 5000
+				if (!isNaN(num) && num >= 0 && num <= 5000) {
+					this.plugin.settings.timeoutlen = num;
+					this.plugin.saveSettings();
+				} else {
+					new Notice('Please enter a valid number between 0 and 5000.');
+					// reset the field to the last valid value
+					text.setValue(this.plugin.settings.timeoutlen.toString());
+				}
+				});
 			});
 
 		new Setting(containerEl)

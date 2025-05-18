@@ -54,6 +54,33 @@ describe("regex matching links", () => {
     test("escaped open bracket makes wikilink invalid", () => {
       expectMatchesForLines([`\\${WIKILINK_TEXT}`], []);
     });
+    describe("shouldn't be matched over multiple lines", () => {
+      test("split after first open bracket", () => {
+        const firstLine = "Check out this link: [";
+        const secondLine = `[Some internal note]] - click it!`;
+        expectMatchesForLines([firstLine, secondLine], []);
+      });
+      test("split after second open bracket", () => {
+        const firstLine = "Check out this link: [[";
+        const secondLine = `Some internal note]] - click it!`;
+        expectMatchesForLines([firstLine, secondLine], []);
+      });
+      test("split in middle of text", () => {
+        const firstLine = "Check out this link: [[Some internal";
+        const secondLine = ` note]] - click it!`;
+        expectMatchesForLines([firstLine, secondLine], []);
+      });
+      test("split before first close bracket", () => {
+        const firstLine = "Check out this link: [[Some internal note";
+        const secondLine = `]] - click it!`;
+        expectMatchesForLines([firstLine, secondLine], []);
+      });
+      test("split before second close bracket", () => {
+        const firstLine = "Check out this link: [[Some internal note]";
+        const secondLine = `] - click it!`;
+        expectMatchesForLines([firstLine, secondLine], []);
+      });
+    });
   });
 
   describe("markdown link", () => {
@@ -140,8 +167,40 @@ describe("regex matching links", () => {
   });
 
   describe("standalone URL", () => {
-    test("http", () => testSingleLinkLine(EXAMPLE_HTTP_URL));
-    test("https", () => testSingleLinkLine(EXAMPLE_HTTPS_URL));
+    describe("various protocols", () => {
+      test("http", () => testSingleLinkLine(EXAMPLE_HTTP_URL));
+      test("https", () => testSingleLinkLine(EXAMPLE_HTTPS_URL));
+      test("ftp", () => testSingleLinkLine("ftp://example.com"));
+      test("file", () => testSingleLinkLine("file://example/path/to/file"));
+      test("chrome extensions", () => testSingleLinkLine("chrome://extensions"));
+      test("chrome settings", () => testSingleLinkLine("chrome://settings"));
+      test("chrome bookmarks", () => testSingleLinkLine("chrome://bookmarks"));
+      test("chrome history", () => testSingleLinkLine("chrome://history"));
+      test("chrome downloads", () => testSingleLinkLine("chrome://downloads"));
+      test("chrome flags", () => testSingleLinkLine("chrome://flags"));
+    });
+    describe("shouldn't be matched over multiple lines", () => {
+      test("split before colon", () => {
+        const firstLine = "Check out this link: http";
+        const secondLine = `://example.com - click it!`;
+        expectMatchesForLines([firstLine, secondLine], []);
+      });
+      test("split after colon", () => {
+        const firstLine = "Check out this link: http:";
+        const secondLine = `//example.com - click it!`;
+        expectMatchesForLines([firstLine, secondLine], []);
+      });
+      test("split between slashes", () => {
+        const firstLine = "Check out this link: http:/";
+        const secondLine = `/example.com - click it!`;
+        expectMatchesForLines([firstLine, secondLine], []);
+      });
+      test("split after slashes", () => {
+        const firstLine = "Check out this link: http://";
+        const secondLine = `example.com - click it!`;
+        expectMatchesForLines([firstLine, secondLine], []);
+      });
+    });
   });
 
   describe("multiple link types", () => {

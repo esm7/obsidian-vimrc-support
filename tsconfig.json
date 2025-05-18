@@ -10,13 +10,7 @@
     "moduleResolution": "node",
     "downlevelIteration": true,
     "importHelpers": true,
-    "lib": [
-      "dom",
-      "scripthost",
-      "ES2020"
-    ]
+    "lib": ["dom", "scripthost", "ES2020"]
   },
-  "include": [
-    "**/*.ts"
-  ]
+  "include": ["**/*.ts"]
 }

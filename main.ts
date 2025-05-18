@@ -176,7 +176,7 @@ export default class VimrcPlugin extends Plugin {
 	}
 
 	async updateVimEvents() {
-		if (!(this.app as Any).isVimEnabled())
+		if (!(this.app as any).isVimEnabled())
 			return;
 		let view = this.getActiveView();
 		if (view) {

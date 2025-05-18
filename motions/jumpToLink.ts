@@ -27,7 +27,7 @@ const WIKILINK_REGEX = /(?<!\\)\[\[.*?\]\]/g;
  *     brackets within the display text, and ensures that the backslash is not escaping the closing
  *     square bracket of the display text.
  * - A closing square bracket `]`
- * - A URL in parentheses `( ... )`
+ * - A URL in non-escaped parentheses `( ... )`
  *
  * **Note**: This regex does not allow for unescaped square brackets within the display text, even
  * though Obsidian's Markdown parser may render such links in Reading mode. In particular, Obsidian
@@ -42,7 +42,7 @@ const WIKILINK_REGEX = /(?<!\\)\[\[.*?\]\]/g;
  * - Users can still use square brackets in display text if they escape them, which is arguably
  * better practice anyway
  */
-const MARKDOWN_LINK_REGEX = /(?<!\\)\[(?:[^\\\[\]\n]|\\.)*?\]\(.*?\)/g;
+const MARKDOWN_LINK_REGEX = /(?<!\\)\[(?:[^\\\[\]\n]|\\.)*?\]\(.*?(?<!\\)\)/g;
 
 /** Regex for a standalone URL. This is a naive regex that matches any string that starts with a
  * protocol-looking prefix (any lowercase letters followed by `://`) followed by one or more

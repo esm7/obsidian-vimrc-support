@@ -4,44 +4,43 @@ import { MotionFn } from "../utils/vimApi";
 /** Regex for a wikilink. Starts off with a negative lookbehind for a backslash, to make sure the
  * opening square bracket isn't escaped.
  *
- * We don't bother making the internals of the wikilink regex too complicated (using `.*?` to allow
- * any characters), because Obsidian's markdown parser is imperfect and inconsistent anyway, so we
- * may as well just match anything that generally looks like a wikilink.
+ * Note that although Obsidian doesn't allow most special characters inside a file name (e.g. `[`,
+ * `]`, `:`, `#`, `|`, `^`, `\`, or `/`), its Markdown parser is lenient enough to result in
+ * basically anything inside non-escaped double square brackets being rendered as a wikilink. This
+ * even includes a trailing backslash, which you'd think would escape the first closing square
+ * bracket! So we follow suit and allow any character inside the double square brackets, except for
+ * a newline (which `.` won't match as long as we don't use the `s` flag).
  */
 const WIKILINK_REGEX = /(?<!\\)\[\[.*?\]\]/g;
 
-/** Regex for a markdown link.
+/** Regex for a markdown link of the form `[display text](url)`.
  *
- * Components:
+ * Obsidian's parsing of markdown links is inconsistent between Live Preview and Reading mode. We
+ * align more with Reading mode, differing mainly in our handling of square brackets in the display
+ * text.
  *
- * - `(?<!\\)` - negative lookbehind for a backslash, to make sure the opening bracket isn't escaped
+ * Our markdown link regex matches a string with the following structure:
+ * - An opening square bracket `[` that is not escaped (i.e. not preceded by a backslash)
+ * - A sequence of display text characters:
+ *     - Any character that is not a backslash, square bracket, or newline; or
+ *     - A backslash followed by another character. This simultaneously allows escaped square
+ *     brackets within the display text, and ensures that the backslash is not escaping the closing
+ *     square bracket of the display text.
+ * - A closing square bracket `]`
+ * - A URL in parentheses `( ... )`
  *
- * - `\[` - open square bracket for the display text
+ * **Note**: This regex does not allow for unescaped square brackets within the display text, even
+ * though Obsidian's Markdown parser may render such links in Reading mode. In particular, Obsidian
+ * allows unescaped brackets as long as they come in pairs (e.g.  `[Label [2]](url)`).
  *
- * - `(?:[^\\\[\]\n]|\\.)` - display text character: either a character that's not a backslash,
- * square bracket, or newline; or a backslash plus another character (i.e. an escaped character,
- * including a square bracket). Basically, if a square bracket is present within the display text,
- * it must be escaped. If a backslash is present, it must be escaping a character within the display
- * text (rather than escaping the closing bracket of the display text).
- *
- * - `*?` - as many display text characters as needed to reach the closing square bracket
- *
- * - `\]` - closing square bracket for the display text
- *
- * - `\(.*?\)` - url enclosed in parentheses. We don't bother with a lookbehind for a backslash
- * here, because Obsidian's markdown parser is pretty weird with an escaped closing parenthesis
- * anyway.
- *
- * Note that Obsidian's markdown parser is inconsistent with parsing markdown links in Live Preview
- * vs Reading mode. Reading mode parsing seems more accurate and self-consistent, so we align more
- * with that.
- *
- * However, completely disallowing non-escaped square brackets in the display text is not fully
- * aligned with Reading mode, which seems to allow pairs of non-escaped square brackets if they
- * don't end up forming wikilink syntax (e.g. `[display text [2]](https://example.com)` is allowed,
- * but `[[2]](https://example.com)` is not). But this helps avoid issues like matching links inside
- * checkboxes (e.g. `- [ ] [Some link](https://example.com)`), and it's arguably better practice for
- * the user to escape square brackets within the display text anyway.
+ * Our stricter behavior is intentional:
+ * - It provides a simple way to prevent things like checkboxes being treated as part of the link
+ * (e.g. `- [ ] [display text](url)`)
+ * - Fully aligning with Obsidian's parsing would require a more complex regex that would be less
+ * performant (e.g. nested lookbehinds to only match pairs of brackets) and harder to maintain
+ * - Obsidian's markdown link parsing is not super consistent or coherent anyway
+ * - Users can still use square brackets in display text if they escape them, which is arguably
+ * better practice anyway
  */
 const MARKDOWN_LINK_REGEX = /(?<!\\)\[(?:[^\\\[\]\n]|\\.)*?\]\(.*?\)/g;
 

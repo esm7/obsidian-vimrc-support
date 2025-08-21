@@ -50,6 +50,9 @@ exmap back obcommand app:go-back
 nmap <C-o> :back<CR>
 exmap forward obcommand app:go-forward
 nmap <C-i> :forward<CR>
+
+" Also works
+nmap <C-w>h :obcommand<space>workspace:split-horizontal<CR>
 ```
 
 ## Supported Commands
@@ -577,3 +580,4 @@ Fixed [an issue](https://github.com/esm7/obsidian-vimrc-support/issues/2) caused
 The plugin now injects the Vimrc just once for the CodeMirror class (for the class -- not object instance, because that's where CodeMirror keeps the Vim settings.)
 
 This seems to work well, but in theory there could be Vimrc settings that are CodeMirror-object bound and not class-bound, and in that case we'll be in trouble (these settings will be lost when Obsidian replaces CodeMirror objects).
+

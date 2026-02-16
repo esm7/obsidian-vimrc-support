@@ -58,6 +58,14 @@ const mappingCommands: String[] = [
 	"vunmap",
 ]
 
+// All Ex commands that take key-sequence arguments where <leader> should be expanded.
+// This is broader than mappingCommands because CodeMirror supports more mapping variants.
+const leaderMapCommands: string[] = [
+	"map", "nmap", "imap", "vmap", "omap",
+	"noremap", "nnoremap", "vnoremap", "inoremap", "onoremap",
+	"unmap", "iunmap", "nunmap", "vunmap",
+];
+
 function sleep(ms: number) {
 	return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -79,6 +87,7 @@ export default class VimrcPlugin extends Plugin {
 	private customVimKeybinds: { [name: string]: boolean } = {};
 	private currentSelection: [EditorSelection] = null;
 	private isInsertMode: boolean = false;
+	private leaderKey: string = "\\";
 
 	updateVimStatusBar() {
 		this.vimStatusBar.setText(
@@ -315,16 +324,43 @@ export default class VimrcPlugin extends Plugin {
 			vimCommands.split("\n").forEach(
 				function (line: string, index: number, arr: [string]) {
 					if (line.trim().length > 0 && line.trim()[0] != '"') {
-						let split = line.split(" ")
+						// Parse "let mapleader" directives (consumed, not forwarded to CodeMirror).
+						const leader = this.parseLeaderDirective(line.trim());
+						if (leader !== null) {
+							this.leaderKey = leader;
+							return;
+						}
+
+						// Substitute <leader> in mapping commands before handing to CodeMirror.
+						const processedLine = this.substituteLeader(line, this.leaderKey);
+
+						let split = processedLine.split(" ")
 						if (mappingCommands.includes(split[0])) {
 							// Have to do this because "vim-command-done" event doesn't actually work properly, or something.
 							this.customVimKeybinds[split[1]] = true
 						}
-						this.codeMirrorVimObject.handleEx(cmEditor, line);
+						this.codeMirrorVimObject.handleEx(cmEditor, processedLine);
 					}
 				}.bind(this) // Faster than an arrow function. https://stackoverflow.com/questions/50375440/binding-vs-arrow-function-for-react-onclick-event
 			)
 		}
+	}
+
+	private parseLeaderDirective(line: string): string | null {
+		// Match: let mapleader = "x" or let mapleader = 'x'
+		// Case-insensitive on "let mapleader" to be forgiving, matching Vim behavior.
+		const match = line.match(/^\s*let\s+mapleader\s*=\s*["'](.+?)["']\s*$/i);
+		return match ? match[1] : null;
+	}
+
+	private substituteLeader(line: string, leaderKey: string): string {
+		const trimmed = line.trim();
+		const firstSpace = trimmed.indexOf(" ");
+		if (firstSpace === -1) return line;
+		const command = trimmed.substring(0, firstSpace);
+		if (!leaderMapCommands.includes(command)) return line;
+		// Replace all occurrences of <leader> (case-insensitive) with the leader key.
+		return line.replace(/<leader>/gi, leaderKey);
 	}
 
 	defineBasicCommands(vimObject: any) {

@@ -217,6 +217,32 @@ But first `<Space>` must be unbound with `unmap <Space>`.
 Afterwards `<Space>` can be mapped normally as any other key.
 
 
+## Leader Key Support
+
+You can use the standard Vim `<leader>` key in your mappings. Set your leader key with `let mapleader` and then use `<leader>` in any mapping command:
+
+```vim
+let mapleader = ","
+nmap <leader>f :nohl<CR>
+nmap <leader>w :obcommand editor:save-file<CR>
+```
+
+The default leader key is `\` (backslash), matching Vim's default.
+
+`<leader>` works in all mapping commands (`map`, `nmap`, `noremap`, `imap`, `vmap`, etc.) and is case-insensitive — `<Leader>`, `<LEADER>`, and `<leader>` all work.
+
+If you set `let mapleader = "<Space>"`, you should also add `unmap <Space>` before your leader mappings to free Space from its default binding:
+
+```vim
+let mapleader = "<Space>"
+unmap <Space>
+nmap <leader>fs :obcommand editor:save-file<CR>
+```
+
+Space continues to work normally in insert mode.
+
+You can change the leader key mid-file — each `let mapleader` only affects mappings that come after it, matching Vim's behavior.
+
 ## Emulate Common Vim Commands via Obsidian commands
 
 Using `obcommand`, it is possible to emulate some additional Vim commands that aren't included in Obsidian's Vim mode, like for example `gt` and `zo`. 

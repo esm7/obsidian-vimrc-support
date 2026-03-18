@@ -444,6 +444,7 @@ export default class VimrcPlugin extends Plugin {
 		const editor = view.editor;
 		const command = availableCommands[commandName];
 		const {callback, checkCallback, editorCallback, editorCheckCallback} = command;
+		editor.focus();	// editor callbacks expect focus
 		if (editorCheckCallback)
 			editorCheckCallback(false, editor, view);
 		else if (editorCallback)

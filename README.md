@@ -231,16 +231,6 @@ The default leader key is `\` (backslash), matching Vim's default.
 
 `<leader>` works in all mapping commands (`map`, `nmap`, `noremap`, `imap`, `vmap`, etc.) and is case-insensitive — `<Leader>`, `<LEADER>`, and `<leader>` all work.
 
-If you set `let mapleader = "<Space>"`, you should also add `unmap <Space>` before your leader mappings to free Space from its default binding:
-
-```vim
-let mapleader = "<Space>"
-unmap <Space>
-nmap <leader>fs :obcommand editor:save-file<CR>
-```
-
-Space continues to work normally in insert mode.
-
 You can change the leader key mid-file — each `let mapleader` only affects mappings that come after it, matching Vim's behavior.
 
 ## Emulate Common Vim Commands via Obsidian commands

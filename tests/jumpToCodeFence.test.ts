@@ -1,3 +1,4 @@
+import { EditorPosition } from "obsidian";
 import { describe, expect, test } from "vitest";
 import { jumpToNextCodeFence, jumpToPreviousCodeFence } from "../motions/jumpToCodeFence";
 import { createFakeCodeMirrorEditor } from "./createFakeCodeMirrorEditor";
@@ -38,8 +39,8 @@ describe("jumpToPreviousCodeFence", () => {
 });
 
 function expectNextCodeFencePosition(
-  cursorPosition: { line: number; ch: number },
-  expectedPosition: { line: number; ch: number },
+  cursorPosition: EditorPosition,
+  expectedPosition: EditorPosition,
   contentLines: string[] = CODE_FENCE_CONTENT_LINES
 ): void {
   const cm = createFakeCodeMirrorEditor(contentLines);
@@ -48,8 +49,8 @@ function expectNextCodeFencePosition(
 }
 
 function expectPreviousCodeFencePosition(
-  cursorPosition: { line: number; ch: number },
-  expectedPosition: { line: number; ch: number },
+  cursorPosition: EditorPosition,
+  expectedPosition: EditorPosition,
   contentLines: string[] = CODE_FENCE_CONTENT_LINES
 ): void {
   const cm = createFakeCodeMirrorEditor(contentLines);

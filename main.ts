@@ -3,6 +3,7 @@ import { App, EditorSelection, MarkdownView, Notice, Editor as ObsidianEditor, P
 
 import { followLinkUnderCursor } from './actions/followLinkUnderCursor';
 import { moveDownSkippingFolds, moveUpSkippingFolds } from './actions/moveSkippingFolds';
+import { jumpToNextCodeFence, jumpToPreviousCodeFence } from './motions/jumpToCodeFence';
 import { jumpToNextHeading, jumpToPreviousHeading } from './motions/jumpToHeading';
 import { jumpToNextLink, jumpToPreviousLink } from './motions/jumpToLink';
 import { defineAndMapObsidianVimAction, defineAndMapObsidianVimMotion } from './utils/obsidianVimCommand';
@@ -429,6 +430,8 @@ export default class VimrcPlugin extends Plugin {
   defineAndMapObsidianVimCommands(vimObject: VimApi) {
 		defineAndMapObsidianVimMotion(vimObject, jumpToNextHeading, ']]');
 		defineAndMapObsidianVimMotion(vimObject, jumpToPreviousHeading, '[[');
+		defineAndMapObsidianVimMotion(vimObject, jumpToNextCodeFence, 'gc');
+		defineAndMapObsidianVimMotion(vimObject, jumpToPreviousCodeFence, 'gC');
 		defineAndMapObsidianVimMotion(vimObject, jumpToNextLink, 'gl');
 		defineAndMapObsidianVimMotion(vimObject, jumpToPreviousLink, 'gL');
 

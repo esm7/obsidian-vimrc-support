@@ -88,6 +88,7 @@ Finally, this plugin also provides the following motions/mappings by default:
 
 - `[[` and `]]` to jump to the previous and next Markdown heading.
 - `zk` and `zj` to move up and down while skipping folds.
+- `gc` and `gC` to jump to the next and previous Markdown code fence.
 - `gl` and `gL` to jump to the next and previous link.
 - `gf` to open the link or file under the cursor (temporarily moving the cursor if necessary—e.g. if it's on the first square bracket of a [[Wikilink]]).
 

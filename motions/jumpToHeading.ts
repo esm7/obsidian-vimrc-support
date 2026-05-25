@@ -1,4 +1,3 @@
-import { Editor as CodeMirrorEditor } from "codemirror";
 import { EditorPosition } from "obsidian";
 import { isWithinMatch, jumpToPattern } from "../utils/jumpToPattern";
 import { MotionFn } from "../utils/vimApi";
@@ -11,6 +10,8 @@ const NAIVE_HEADING_REGEX = /^#{1,6} /gm;
 /** Regex for a Markdown fenced codeblock, which begins with some number >=3 of backticks at the
  * start of a line. It either ends on the nearest future line that starts with at least as many
  * backticks (\1 back-reference), or extends to the end of the string if no such future line exists.
+ *
+ * Matches the entire codeblock.
  */
 const FENCED_CODEBLOCK_REGEX = /(^```+)(.*?^\1|.*)/gms;
 
@@ -24,11 +25,7 @@ export const jumpToNextHeading: MotionFn = (cm, cursorPosition, { repeat }) => {
 /**
  * Jumps to the repeat-th previous heading.
  */
-export const jumpToPreviousHeading: MotionFn = (
-  cm,
-  cursorPosition,
-  { repeat }
-) => {
+export const jumpToPreviousHeading: MotionFn = (cm, cursorPosition, { repeat }) => {
   return jumpToHeading({ cm, cursorPosition, repeat, direction: "previous" });
 };
 
@@ -45,7 +42,7 @@ function jumpToHeading({
   repeat,
   direction,
 }: {
-  cm: CodeMirrorEditor;
+  cm: CodeMirror.Editor;
   cursorPosition: EditorPosition;
   repeat: number;
   direction: "next" | "previous";
@@ -62,7 +59,7 @@ function jumpToHeading({
   });
 }
 
-function findAllCodeblocks(cm: CodeMirrorEditor): RegExpExecArray[] {
+function findAllCodeblocks(cm: CodeMirror.Editor): RegExpExecArray[] {
   const content = cm.getValue();
   return [...content.matchAll(FENCED_CODEBLOCK_REGEX)];
 }

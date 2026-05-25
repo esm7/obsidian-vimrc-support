@@ -1,4 +1,3 @@
-import { Editor as CodeMirrorEditor } from "codemirror";
 import { EditorPosition } from "obsidian";
 
 /**
@@ -27,7 +26,7 @@ export function jumpToPattern({
   filterMatch = () => true,
   direction,
 }: {
-  cm: CodeMirrorEditor;
+  cm: CodeMirror.Editor;
   cursorPosition: EditorPosition;
   repeat: number;
   regex: RegExp;

@@ -6,17 +6,16 @@
  * https://libvoyant.ucr.edu/resources/codemirror/doc/manual.html
  */
 
-import { Editor as CodeMirrorEditor } from "codemirror";
 import { EditorPosition } from "obsidian";
 
 export type MotionFn = (
-  cm: CodeMirrorEditor,
+  cm: CodeMirror.Editor,
   cursorPosition: EditorPosition, // called `head` in the API
   motionArgs: { repeat: number }
 ) => EditorPosition;
 
 export type ActionFn = (
-  cm: CodeMirrorEditor,
+  cm: CodeMirror.Editor,
   actionArgs: { repeat: number },
 ) => void;
 

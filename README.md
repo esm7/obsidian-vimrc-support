@@ -86,10 +86,18 @@ In some cases you can find workarounds by experimenting, and the easiest way to 
 
 Finally, this plugin also provides the following motions/mappings by default:
 
-- `[[` and `]]` to jump to the previous and next Markdown heading.
-- `zk` and `zj` to move up and down while skipping folds.
-- `gl` and `gL` to jump to the next and previous link.
+- `[[` and `]]` to jump to the previous and next Markdown heading. Supports repeat (e.g. `2]]` to jump two headings forward).
+- `zk` and `zj` to move up and down while skipping folds. Supports repeat.
+- `gc` and `gC` to jump to the next and previous Markdown code fence (opening or closing fence; just any line starting with >= 3 backticks). Supports repeat.
+- `gl` and `gL` to jump to the next and previous link. Supports repeat.
 - `gf` to open the link or file under the cursor (temporarily moving the cursor if necessary—e.g. if it's on the first square bracket of a [[Wikilink]]).
+
+You can of course remap these as you wish. E.g. if you prefer `'h` and `gh` for jumping to headings:
+
+```vim
+map 'h [[
+map gh ]]
+```
 
 ## Installation
 

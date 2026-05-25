@@ -1,4 +1,3 @@
-import { Editor as CodeMirrorEditor } from "codemirror";
 import { EditorPosition } from "obsidian";
 
 /**
@@ -6,7 +5,7 @@ import { EditorPosition } from "obsidian";
  */
 export function createFakeCodeMirrorEditor(
   contentLines: string[]
-): Pick<CodeMirrorEditor, "getValue" | "indexFromPos" | "posFromIndex"> {
+): Pick<CodeMirror.Editor, "getValue" | "indexFromPos" | "posFromIndex"> {
   const content = contentLines.join("\n");
   const lineStartIndexes = getLineStartIndexes(contentLines);
   return {

@@ -1,4 +1,3 @@
-import { Editor as CodeMirrorEditor } from "codemirror";
 import { EditorPosition } from "obsidian";
 import { isWithinMatch, jumpToPattern } from "../utils/jumpToPattern";
 import { MotionFn } from "../utils/vimApi";
@@ -43,7 +42,7 @@ function jumpToHeading({
   repeat,
   direction,
 }: {
-  cm: CodeMirrorEditor;
+  cm: CodeMirror.Editor;
   cursorPosition: EditorPosition;
   repeat: number;
   direction: "next" | "previous";
@@ -60,7 +59,7 @@ function jumpToHeading({
   });
 }
 
-function findAllCodeblocks(cm: CodeMirrorEditor): RegExpExecArray[] {
+function findAllCodeblocks(cm: CodeMirror.Editor): RegExpExecArray[] {
   const content = cm.getValue();
   return [...content.matchAll(FENCED_CODEBLOCK_REGEX)];
 }

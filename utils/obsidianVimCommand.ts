@@ -2,14 +2,13 @@
  * Utility types and functions for defining Obsidian-specific Vim commands.
  */
 
-import { Editor as CodeMirrorEditor } from "codemirror";
 
 import VimrcPlugin from "../main";
 import { MotionFn, VimApi } from "./vimApi";
 
 export type ObsidianActionFn = (
   vimrcPlugin: VimrcPlugin,  // Included so we can run Obsidian commands as part of the action
-  cm: CodeMirrorEditor,
+  cm: CodeMirror.Editor,
   actionArgs: { repeat: number },
 ) => void;
 

@@ -595,9 +595,23 @@ export default class VimrcPlugin extends Plugin {
 		// yank -> clipboard
 		const buf = currentYankBuffer[0]
 		if (buf !== this.lastYankBuffer[0]) {
-			await win.navigator.clipboard.writeText(buf);
-			this.lastYankBuffer = currentYankBuffer;
-			this.lastSystemClipboard = await win.navigator.clipboard.readText();
+			try {
+				// `navigator.clipboard.writeText` rejects with "Document is not focused"
+				// during focus changes (the same failure the read path below guards
+				// against), silently dropping the yank. On the desktop app, Electron's
+				// clipboard is synchronous and focus-independent, so prefer it and fall
+				// back to the async API where `require` is unavailable (e.g. mobile).
+				const electronClipboard = (win as any).require?.('electron')?.clipboard;
+				if (electronClipboard) {
+					electronClipboard.writeText(buf);
+				} else {
+					await win.navigator.clipboard.writeText(buf);
+				}
+				this.lastYankBuffer = currentYankBuffer;
+				this.lastSystemClipboard = buf;
+			} catch (e) {
+				// Leave lastYankBuffer unchanged so a later keyup/click/focusin retries.
+			}
 			return
 		}
 

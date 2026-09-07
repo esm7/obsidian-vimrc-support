@@ -28,8 +28,16 @@ try {
 		encoding: 'utf8', windowsHide: true, timeout: 30000, maxBuffer: 8 * 1024 * 1024,
 	});
 } finally {
-	fs.unlinkSync(scriptPath);
-	fs.rmdirSync(temporaryDirectory);
+	try {
+		fs.unlinkSync(scriptPath);
+	} catch {
+		// ignore cleanup errors
+	}
+	try {
+		fs.rmdirSync(temporaryDirectory);
+	} catch {
+		// ignore cleanup errors
+	}
 }
 if (result.error) throw result.error;
 process.stdout.write(result.stdout);

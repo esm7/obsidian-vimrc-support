@@ -86,10 +86,19 @@ In some cases you can find workarounds by experimenting, and the easiest way to 
 
 Finally, this plugin also provides the following motions/mappings by default:
 
+- `o` and `O` to open a line below or above with Markdown list, task, blockquote, and indentation prefixes, then enter insert mode. Your vimrc can override these mappings.
 - `[[` and `]]` to jump to the previous and next Markdown heading.
 - `zk` and `zj` to move up and down while skipping folds.
 - `gl` and `gL` to jump to the next and previous link.
 - `gf` to open the link or file under the cursor (temporarily moving the cursor if necessary—e.g. if it's on the first square bracket of a [[Wikilink]]).
+
+### Markdown-aware open lines
+
+In normal mode, `o` after `- Item` opens `- ` on a new line; after `- [x] Task` it opens `- [ ] `. `O` inserts the corresponding prefix above the current line. Both work without additional vimrc configuration or a separate editing plugin.
+
+Numbered items support `1.` and `1)` markers. Consecutive sibling items are incremented when a new item is inserted; renumbering stops at a blank line or a different prefix. Opening below an empty list item removes the marker, letting you leave the list. Fenced code, frontmatter, and display math are excluded from list continuation.
+
+These are normal-mode edit actions, so numeric counts and `.` repeat the opening action as well as the inserted text. Visual-mode `o` and `O` retain their existing behavior.
 
 ## Installation
 

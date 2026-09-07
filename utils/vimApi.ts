@@ -18,11 +18,18 @@ export type MotionFn = (
 export type ActionFn = (
   cm: CodeMirrorEditor,
   actionArgs: { repeat: number },
+  state: VimState,
 ) => void;
+
+export type VimState = {
+  insertMode: boolean;
+  insertModeRepeat?: number;
+};
 
 export type VimApi = {
   defineMotion: (name: string, fn: MotionFn) => void;
   defineAction: (name: string, fn: ActionFn) => void;
+  enterInsertMode: (cm: CodeMirrorEditor) => void;
   mapCommand: (
     keys: string,
     type: string,

@@ -2,6 +2,7 @@ import * as keyFromAccelerator from 'keyboardevent-from-electron-accelerator';
 import { App, EditorSelection, MarkdownView, Notice, Editor as ObsidianEditor, Plugin, PluginSettingTab, Setting } from 'obsidian';
 
 import { followLinkUnderCursor } from './actions/followLinkUnderCursor';
+import { defineMarkdownOpenLine } from './actions/openLine';
 import { moveDownSkippingFolds, moveUpSkippingFolds } from './actions/moveSkippingFolds';
 import { jumpToNextHeading, jumpToPreviousHeading } from './motions/jumpToHeading';
 import { jumpToNextLink, jumpToPreviousLink } from './motions/jumpToLink';
@@ -427,6 +428,7 @@ export default class VimrcPlugin extends Plugin {
 	}
 
   defineAndMapObsidianVimCommands(vimObject: VimApi) {
+		defineMarkdownOpenLine(vimObject);
 		defineAndMapObsidianVimMotion(vimObject, jumpToNextHeading, ']]');
 		defineAndMapObsidianVimMotion(vimObject, jumpToPreviousHeading, '[[');
 		defineAndMapObsidianVimMotion(vimObject, jumpToNextLink, 'gl');
